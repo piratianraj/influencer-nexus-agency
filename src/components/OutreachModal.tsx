@@ -10,7 +10,7 @@ interface Creator {
   id: string;
   username: string;
   name: string;
-  niche: string;
+  niche: string[];
 }
 
 interface OutreachModalProps {
@@ -27,12 +27,13 @@ const OutreachModal = ({ isOpen, onClose, creator, type, onNegotiationComplete }
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const generateMockEmailDraft = (creatorName: string, niche: string) => {
+  const generateMockEmailDraft = (creatorName: string, niche: string[]) => {
+    const nicheText = niche.join(", ");
     return `Subject: Collaboration Opportunity with [Brand Name]
 
 Hi ${creatorName},
 
-We're reaching out regarding a potential collaboration for our upcoming ${niche} campaign. We'd love to discuss:
+We're reaching out regarding a potential collaboration for our upcoming ${nicheText} campaign. We'd love to discuss:
 
 - Your rates for sponsored posts/content
 - Available deliverables (posts, stories, reels)
@@ -58,7 +59,7 @@ Creator: Sounds good, looking forward to it!`,
       
       `AgencyRep: Hi ${creatorName}, thanks for taking our call.
 Creator: Of course! What's this collaboration about?
-AgencyRep: We have a ${creator?.niche} brand campaign coming up. What's your pricing structure?
+AgencyRep: We have a ${creator?.niche.join(", ")} brand campaign coming up. What's your pricing structure?
 Creator: I typically charge ₹30,000 per reel and ₹15,000 per story. For multiple deliverables, I can offer a package deal.
 AgencyRep: We're looking at 3 reels and 5 stories. What would be your package rate?
 Creator: For that volume, I can do ₹120,000 total. I'm free next month.

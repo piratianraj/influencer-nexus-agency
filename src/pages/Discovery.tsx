@@ -1,13 +1,15 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Search, Filter, X } from 'lucide-react';
+import { Search, Filter, X, Mail, Phone } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import OutreachModal from '@/components/OutreachModal';
+import NegotiationSummary from '@/components/NegotiationSummary';
+import ContractModal from '@/components/ContractModal';
+import InvoiceModal from '@/components/InvoiceModal';
 import { AdvancedFilters, FilterOptions } from '@/components/AdvancedFilters';
 
 interface Creator {
@@ -25,6 +27,17 @@ interface Creator {
     story: number;
   };
   verified: boolean;
+}
+
+interface NegotiationData {
+  contact_method: "email" | "call";
+  agreed_price: number;
+  deliverables_count: number;
+  availability_window: string;
+  follow_up_flag: boolean;
+  parsed_summary: string;
+  contacted_at: string;
+  status: string;
 }
 
 const mockCreators: Creator[] = [
@@ -98,7 +111,13 @@ const Discovery = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCreator, setSelectedCreator] = useState<Creator | null>(null);
   const [outreachModalOpen, setOutreachModalOpen] = useState(false);
+  const [outreachType, setOutreachType] = useState<"email" | "call">("email");
   const [showFilters, setShowFilters] = useState(false);
+  const [negotiations, setNegotiations] = useState<Record<string, NegotiationData>>({});
+  const [contractStatuses, setContractStatuses] = useState<Record<string, "none" | "unsigned" | "signed">>({});
+  const [invoiceStatuses, setInvoiceStatuses] = useState<Record<string, "none" | "unpaid" | "paid">>({});
+  const [contractModalOpen, setContractModalOpen] = useState(false);
+  const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
   const [filters, setFilters] = useState<FilterOptions>({
     platform: [],
     followers: { min: 0, max: 0 },
@@ -162,9 +181,34 @@ const Discovery = () => {
     creator.niche.some(n => n.toLowerCase().includes(searchTerm.toLowerCase()))
   ));
 
-  const handleOutreach = (creator: Creator) => {
+  const handleOutreach = (creator: Creator, type: "email" | "call") => {
     setSelectedCreator(creator);
+    setOutreachType(type);
     setOutreachModalOpen(true);
+  };
+
+  const handleNegotiationComplete = (creatorId: string, negotiationData: NegotiationData) => {
+    setNegotiations(prev => ({ ...prev, [creatorId]: negotiationData }));
+    setContractStatuses(prev => ({ ...prev, [creatorId]: "none" }));
+    setInvoiceStatuses(prev => ({ ...prev, [creatorId]: "none" }));
+  };
+
+  const handleOpenContract = (creator: Creator) => {
+    setSelectedCreator(creator);
+    setContractModalOpen(true);
+  };
+
+  const handleOpenInvoice = (creator: Creator) => {
+    setSelectedCreator(creator);
+    setInvoiceModalOpen(true);
+  };
+
+  const handleContractStatusChange = (creatorId: string, status: "unsigned" | "signed") => {
+    setContractStatuses(prev => ({ ...prev, [creatorId]: status }));
+  };
+
+  const handleInvoiceStatusChange = (creatorId: string, status: "unpaid" | "paid") => {
+    setInvoiceStatuses(prev => ({ ...prev, [creatorId]: status }));
   };
 
   return (
@@ -276,58 +320,87 @@ const Discovery = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredCreators.map((creator) => (
-                <Card key={creator.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center space-x-3">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage src={creator.avatar} alt={creator.name} />
-                        <AvatarFallback>{creator.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          {creator.name}
-                          {creator.verified && <span className="text-blue-500">✓</span>}
-                        </CardTitle>
-                        <CardDescription>{creator.location}</CardDescription>
+                <div key={creator.id} className="space-y-4">
+                  <Card className="hover:shadow-lg transition-shadow">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center space-x-3">
+                        <Avatar className="h-12 w-12">
+                          <AvatarImage src={creator.avatar} alt={creator.name} />
+                          <AvatarFallback>{creator.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <CardTitle className="text-lg flex items-center gap-2">
+                            {creator.name}
+                            {creator.verified && <span className="text-blue-500">✓</span>}
+                          </CardTitle>
+                          <CardDescription>{creator.location}</CardDescription>
+                        </div>
                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex flex-wrap gap-1">
-                      {creator.niche.map(n => (
-                        <Badge key={n} variant="secondary" className="text-xs">{n}</Badge>
-                      ))}
-                    </div>
-                    
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Followers:</span>
-                        <span className="font-medium">{creator.followers.toLocaleString()}</span>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex flex-wrap gap-1">
+                        {creator.niche.map(n => (
+                          <Badge key={n} variant="secondary" className="text-xs">{n}</Badge>
+                        ))}
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Engagement:</span>
-                        <span className="font-medium">{creator.engagement}%</span>
+                      
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Followers:</span>
+                          <span className="font-medium">{creator.followers.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Engagement:</span>
+                          <span className="font-medium">{creator.engagement}%</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Rate/Post:</span>
+                          <span className="font-medium">${creator.rates.post}</span>
+                        </div>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Rate/Post:</span>
-                        <span className="font-medium">${creator.rates.post}</span>
+                      
+                      <div className="flex flex-wrap gap-1">
+                        {creator.platforms.map(platform => (
+                          <Badge key={platform} variant="outline" className="text-xs">{platform}</Badge>
+                        ))}
                       </div>
-                    </div>
-                    
-                    <div className="flex flex-wrap gap-1">
-                      {creator.platforms.map(platform => (
-                        <Badge key={platform} variant="outline" className="text-xs">{platform}</Badge>
-                      ))}
-                    </div>
-                    
-                    <Button 
-                      onClick={() => handleOutreach(creator)} 
-                      className="w-full"
-                    >
-                      Contact Creator
-                    </Button>
-                  </CardContent>
-                </Card>
+                      
+                      {!negotiations[creator.id] ? (
+                        <div className="flex gap-2">
+                          <Button 
+                            onClick={() => handleOutreach(creator, "email")} 
+                            className="flex-1"
+                            size="sm"
+                          >
+                            <Mail className="h-4 w-4 mr-1" />
+                            Email
+                          </Button>
+                          <Button 
+                            onClick={() => handleOutreach(creator, "call")} 
+                            variant="outline"
+                            className="flex-1"
+                            size="sm"
+                          >
+                            <Phone className="h-4 w-4 mr-1" />
+                            Call
+                          </Button>
+                        </div>
+                      ) : null}
+                    </CardContent>
+                  </Card>
+
+                  {/* Negotiation Summary */}
+                  {negotiations[creator.id] && (
+                    <NegotiationSummary
+                      negotiation={negotiations[creator.id]}
+                      creatorName={creator.name}
+                      onOpenContract={() => handleOpenContract(creator)}
+                      onOpenInvoice={() => handleOpenInvoice(creator)}
+                      contractStatus={contractStatuses[creator.id] || "none"}
+                      invoiceStatus={invoiceStatuses[creator.id] || "none"}
+                    />
+                  )}
+                </div>
               ))}
             </div>
 
@@ -354,7 +427,38 @@ const Discovery = () => {
           setOutreachModalOpen(false);
           setSelectedCreator(null);
         }}
+        type={outreachType}
+        onNegotiationComplete={handleNegotiationComplete}
       />
+
+      {selectedCreator && negotiations[selectedCreator.id] && (
+        <>
+          <ContractModal
+            isOpen={contractModalOpen}
+            onClose={() => {
+              setContractModalOpen(false);
+              setSelectedCreator(null);
+            }}
+            creatorName={selectedCreator.name}
+            negotiationData={negotiations[selectedCreator.id]}
+            contractStatus={contractStatuses[selectedCreator.id] || "none"}
+            onStatusChange={(status) => handleContractStatusChange(selectedCreator.id, status)}
+          />
+
+          <InvoiceModal
+            isOpen={invoiceModalOpen}
+            onClose={() => {
+              setInvoiceModalOpen(false);
+              setSelectedCreator(null);
+            }}
+            creatorName={selectedCreator.name}
+            negotiationData={negotiations[selectedCreator.id]}
+            invoiceStatus={invoiceStatuses[selectedCreator.id] || "none"}
+            onStatusChange={(status) => handleInvoiceStatusChange(selectedCreator.id, status)}
+            contractSigned={contractStatuses[selectedCreator.id] === "signed"}
+          />
+        </>
+      )}
     </div>
   );
 };
