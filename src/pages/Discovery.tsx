@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 import OutreachModal from '@/components/OutreachModal';
 import ContractModal from '@/components/ContractModal';
 import InvoiceModal from '@/components/InvoiceModal';
@@ -41,6 +44,7 @@ interface NegotiationData {
 }
 
 const Discovery = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCreator, setSelectedCreator] = useState<Creator | null>(null);
   const [outreachModalOpen, setOutreachModalOpen] = useState(false);
@@ -131,6 +135,15 @@ const Discovery = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate(-1)}
+            className="mb-4 flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          
           <h1 className="text-3xl font-bold text-gray-900 mb-4">Discover Creators</h1>
           
           <SearchAndFilters

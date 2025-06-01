@@ -1,17 +1,18 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Upload, FileText, Brain, Loader2 } from 'lucide-react';
+import { ArrowLeft, Upload, FileText, Brain, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useBrandBriefAnalysis } from '@/hooks/useBrandBriefAnalysis';
 import BriefSummary from '@/components/BriefSummary';
 import InfluencerRecommendations from '@/components/InfluencerRecommendations';
+import { useNavigate } from 'react-router-dom';
 
 const BrandBrief = () => {
+  const navigate = useNavigate();
   const [briefText, setBriefText] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const { analyzeBrief, isAnalyzing, briefAnalysis, influencerRecommendations } = useBrandBriefAnalysis();
@@ -58,6 +59,15 @@ const BrandBrief = () => {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate(-1)}
+            className="mb-4 flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          
           <h1 className="text-3xl font-bold text-gray-900 mb-4">Brand Brief Analysis</h1>
           <p className="text-gray-600">
             Upload your brand brief or describe your campaign to get AI-powered influencer recommendations
