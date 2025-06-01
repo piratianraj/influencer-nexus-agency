@@ -2,8 +2,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -16,11 +14,12 @@ serve(async (req) => {
 
   try {
     const { query } = await req.json();
-    console.log('Processing search query:', query);
+    console.log('Intelligent search query:', query);
 
-    // If OpenAI key is not available, return a basic search result
+    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+    
     if (!openAIApiKey) {
-      console.log('OpenAI API key not available, returning basic search');
+      console.log('OpenAI API key not found, falling back to basic search');
       return new Response(JSON.stringify({
         searchTerm: query,
         filters: {}
@@ -28,6 +27,30 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
+    const prompt = `
+    Analyze this search query for creator discovery: "${query}"
+    
+    Extract search terms and filters from the query. Return a JSON object with:
+    {
+      "searchTerm": "main search keywords",
+      "filters": {
+        "platform": ["Instagram", "YouTube", "TikTok"] (array, only if mentioned),
+        "niche": ["fitness", "tech", "fashion"] (array, only if mentioned),
+        "location": ["United States", "Canada"] (array, only if mentioned),
+        "verified": true/false (only if mentioned),
+        "followers": {"min": 0, "max": 0} (only if mentioned),
+        "engagement": {"min": 0, "max": 0} (only if mentioned)
+      }
+    }
+    
+    Examples:
+    - "fitness creators with high engagement" → {"searchTerm": "fitness", "filters": {"niche": ["fitness"], "engagement": {"min": 5, "max": 0}}}
+    - "verified tech YouTubers from US" → {"searchTerm": "tech", "filters": {"niche": ["tech"], "platform": ["YouTube"], "location": ["United States"], "verified": true}}
+    - "Alex" → {"searchTerm": "Alex", "filters": {}}
+    
+    Only return the JSON object, no other text.
+    `;
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -38,95 +61,50 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [
-          {
-            role: 'system',
-            content: `You are a search query interpreter for a creator database. Parse natural language queries and return JSON with search parameters.
-
-Available fields:
-- platforms: ["Instagram", "YouTube", "TikTok", "Twitter", "LinkedIn"]
-- niches: ["fitness", "tech", "fashion", "food", "travel", "gaming", "beauty", "lifestyle", "business", "education", "music", "art", "sports", "health", "comedy", "DIY", "pets", "family", "cars", "finance"]
-- countries: any country name
-- followers: numeric ranges
-- engagement_rate: numeric ranges (0-100)
-
-Return ONLY valid JSON in this format:
-{
-  "searchTerm": "extracted keywords for name/niche search",
-  "filters": {
-    "platform": ["array of platforms"],
-    "niche": ["array of niches"],
-    "location": ["array of countries"],
-    "followers": {"min": number, "max": number},
-    "engagement": {"min": number, "max": number},
-    "verified": boolean or null
-  }
-}
-
-Examples:
-- "fitness creators with high engagement" → {"searchTerm": "fitness", "filters": {"niche": ["fitness"], "engagement": {"min": 5, "max": 0}}}
-- "YouTubers from US with 100k+ followers" → {"searchTerm": "", "filters": {"platform": ["YouTube"], "location": ["United States"], "followers": {"min": 100000, "max": 0}}}
-- "verified tech influencers" → {"searchTerm": "tech", "filters": {"niche": ["tech"], "verified": true}}
-
-Set max to 0 to indicate no upper limit. Only include filters that are explicitly mentioned.`
-          },
-          {
-            role: 'user',
-            content: query
-          }
+          { role: 'system', content: 'You are a search query analyzer that extracts filters for creator discovery. Always respond with valid JSON only.' },
+          { role: 'user', content: prompt }
         ],
-        temperature: 0.1,
+        temperature: 0,
+        max_tokens: 500,
       }),
     });
 
+    if (!response.ok) {
+      console.error('OpenAI API error:', response.status, response.statusText);
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
     const data = await response.json();
-    console.log('OpenAI response:', data);
-
-    // Handle API errors (like quota exceeded)
-    if (data.error) {
-      console.log('OpenAI API error:', data.error.message);
-      
-      // Fallback to basic text search
-      const basicResult = {
+    const content = data.choices[0].message.content.trim();
+    
+    console.log('OpenAI response:', content);
+    
+    // Parse the JSON response
+    let result;
+    try {
+      result = JSON.parse(content);
+    } catch (parseError) {
+      console.error('Failed to parse OpenAI response as JSON:', parseError);
+      // Fallback to basic search
+      result = {
         searchTerm: query,
         filters: {}
       };
-      
-      return new Response(JSON.stringify(basicResult), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
     }
 
-    // Handle missing choices
-    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-      console.log('Invalid OpenAI response structure');
-      
-      const basicResult = {
-        searchTerm: query,
-        filters: {}
-      };
-      
-      return new Response(JSON.stringify(basicResult), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const searchParams = JSON.parse(data.choices[0].message.content);
-    console.log('Parsed search parameters:', searchParams);
-
-    return new Response(JSON.stringify(searchParams), {
+    return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
     console.error('Error in intelligent-search function:', error);
     
-    // Return basic search as fallback
-    const { query } = await req.json().catch(() => ({ query: '' }));
-    const fallbackResult = {
-      searchTerm: query || '',
+    // Always return a fallback response instead of an error
+    const fallback = {
+      searchTerm: (await req.json()).query || '',
       filters: {}
     };
     
-    return new Response(JSON.stringify(fallbackResult), {
+    return new Response(JSON.stringify(fallback), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }

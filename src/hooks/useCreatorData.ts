@@ -36,23 +36,10 @@ export const useCreatorData = () => {
     return Math.max(Math.floor(baseRate * engagementMultiplier), 100);
   };
 
-  const enableRLS = async () => {
-    try {
-      console.log('Enabling RLS for creator database...');
-      // Use any type for the RPC call to avoid TypeScript issues
-      await (supabase as any).rpc('enable_rls_creator_database');
-    } catch (error) {
-      console.log('RLS already enabled or error:', error);
-    }
-  };
-
-  const fetchCreators = async (retryCount = 0) => {
+  const fetchCreators = async () => {
     try {
       setLoading(true);
       console.log('Fetching creators from database...');
-      
-      // First try to enable RLS
-      await enableRLS();
       
       const { data, error } = await supabase
         .from('creator database')
@@ -62,19 +49,6 @@ export const useCreatorData = () => {
 
       if (error) {
         console.error('Error fetching creators:', error);
-        
-        // If it's an RLS error and we haven't retried, try to fix RLS
-        if (error.message.includes('RLS') && retryCount === 0) {
-          console.log('Attempting to fix RLS...');
-          try {
-            await supabase.functions.invoke('fix-creator-access');
-            // Retry after fixing RLS
-            return fetchCreators(1);
-          } catch (fixError) {
-            console.error('Failed to fix RLS:', fixError);
-          }
-        }
-        
         toast({
           title: "Database Error",
           description: `Failed to fetch creators: ${error.message}`,
@@ -152,9 +126,9 @@ export const useCreatorData = () => {
     },
     {
       id: '2',
-      name: 'Sarah Tech',
+      name: 'Sarah Chen',
       username: '@sarahtech',
-      avatar: generateAvatarUrl('Sarah Tech'),
+      avatar: generateAvatarUrl('Sarah Chen'),
       location: 'Canada',
       niche: ['tech', 'gadgets'],
       platforms: ['YouTube', 'TikTok'],
@@ -174,6 +148,32 @@ export const useCreatorData = () => {
       followers: 67000,
       engagement: 5.4,
       rates: { post: 280, story: 80 },
+      verified: true
+    },
+    {
+      id: '4',
+      name: 'Emma Food',
+      username: '@emmafood',
+      avatar: generateAvatarUrl('Emma Food'),
+      location: 'Australia',
+      niche: ['food', 'cooking'],
+      platforms: ['TikTok'],
+      followers: 45000,
+      engagement: 7.1,
+      rates: { post: 200, story: 60 },
+      verified: false
+    },
+    {
+      id: '5',
+      name: 'David Travel',
+      username: '@davidtravel',
+      avatar: generateAvatarUrl('David Travel'),
+      location: 'Germany',
+      niche: ['travel', 'adventure'],
+      platforms: ['YouTube'],
+      followers: 95000,
+      engagement: 5.8,
+      rates: { post: 400, story: 120 },
       verified: true
     }
   ];

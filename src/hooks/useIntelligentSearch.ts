@@ -27,23 +27,35 @@ export const useIntelligentSearch = () => {
       });
 
       if (error) {
-        console.error('Search error:', error);
-        
-        // Fallback to basic text search
+        console.error('Intelligent search error:', error);
         console.log('Falling back to basic text search');
+        
+        // Show a toast to inform user about the fallback
+        toast({
+          title: "AI Search Unavailable",
+          description: "Using basic search instead. Try searching for creator names or niches.",
+          variant: "default"
+        });
+        
         return {
           searchTerm: query,
           filters: {}
         };
       }
 
-      console.log('Search result:', data);
+      console.log('Intelligent search result:', data);
       return data as SearchResult;
     } catch (error) {
       console.error('Unexpected search error:', error);
       
-      // Fallback to basic text search
-      console.log('Falling back to basic text search due to error');
+      // Show error toast
+      toast({
+        title: "Search Error",
+        description: "Search temporarily unavailable. Using basic text search.",
+        variant: "destructive"
+      });
+      
+      // Always return a fallback
       return {
         searchTerm: query,
         filters: {}
