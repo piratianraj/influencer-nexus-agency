@@ -3,7 +3,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
-const geminiApiKey = Deno.env.get('GOOGLE_GEMINI_API_KEY');
+const deepseekApiKey = Deno.env.get('DEEPSEEK_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
@@ -24,16 +24,19 @@ serve(async (req) => {
     // Create Supabase client
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Step 1: Analyze the brand brief with Gemini
-    const analysisResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`, {
+    // Step 1: Analyze the brand brief with DeepSeek
+    const analysisResponse = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${deepseekApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: `You are an expert marketing strategist analyzing brand briefs. Extract key information and provide structured analysis.
+        model: 'deepseek-chat',
+        messages: [
+          {
+            role: 'user',
+            content: `You are an expert marketing strategist analyzing brand briefs. Extract key information and provide structured analysis.
 
 Return ONLY valid JSON in this exact format:
 {
@@ -50,16 +53,16 @@ Return ONLY valid JSON in this exact format:
 }
 
 Brand brief to analyze: ${briefText}`
-          }]
-        }],
-        generationConfig: {
-          temperature: 0.3,
-        }
+          }
+        ],
+        temperature: 0.3,
       }),
     });
 
     const analysisData = await analysisResponse.json();
-    const analysis = JSON.parse(analysisData.candidates[0]?.content?.parts[0]?.text);
+    const analysisContent = analysisData.choices[0]?.message?.content;
+    const cleanAnalysisContent = analysisContent.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    const analysis = JSON.parse(cleanAnalysisContent);
     console.log('Brief analysis:', analysis);
 
     // Step 2: Get creators from database
@@ -74,16 +77,19 @@ Brand brief to analyze: ${briefText}`
 
     console.log(`Found ${creators?.length || 0} creators in database`);
 
-    // Step 3: Use Gemini to match and score creators
-    const matchingResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`, {
+    // Step 3: Use DeepSeek to match and score creators
+    const matchingResponse = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${deepseekApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: `You are an influencer marketing expert. Analyze creators and score their match with the brand brief.
+        model: 'deepseek-chat',
+        messages: [
+          {
+            role: 'user',
+            content: `You are an influencer marketing expert. Analyze creators and score their match with the brand brief.
 
 Brand Analysis: ${JSON.stringify(analysis)}
 
@@ -108,16 +114,16 @@ Focus on:
 Only include creators with score >= 70. Limit to top 10.
 
 Score these creators: ${JSON.stringify(creators?.slice(0, 50) || [])}`
-          }]
-        }],
-        generationConfig: {
-          temperature: 0.2,
-        }
+          }
+        ],
+        temperature: 0.2,
       }),
     });
 
     const matchingData = await matchingResponse.json();
-    const matchedCreators = JSON.parse(matchingData.candidates[0]?.content?.parts[0]?.text);
+    const matchingContent = matchingData.choices[0]?.message?.content;
+    const cleanMatchingContent = matchingContent.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+    const matchedCreators = JSON.parse(cleanMatchingContent);
     console.log(`AI matched ${matchedCreators.length} creators`);
 
     // Step 4: Build final recommendations

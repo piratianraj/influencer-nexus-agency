@@ -16,10 +16,10 @@ serve(async (req) => {
     const { query } = await req.json();
     console.log('Intelligent search query:', query);
 
-    const geminiApiKey = Deno.env.get('GOOGLE_GEMINI_API_KEY');
+    const deepseekApiKey = Deno.env.get('DEEPSEEK_API_KEY');
     
-    if (!geminiApiKey) {
-      console.log('Google Gemini API key not found, falling back to basic search');
+    if (!deepseekApiKey) {
+      console.log('DeepSeek API key not found, falling back to basic search');
       return new Response(JSON.stringify({
         searchTerm: query,
         filters: {}
@@ -28,64 +28,65 @@ serve(async (req) => {
       });
     }
 
-    const prompt = `
-    Analyze this search query for creator discovery: "${query}"
+    const prompt = `Analyze this search query for creator discovery: "${query}"
     
-    Extract search terms and filters from the query. Return a JSON object with:
-    {
-      "searchTerm": "main search keywords",
-      "filters": {
-        "platform": ["Instagram", "YouTube", "TikTok"] (array, only if mentioned),
-        "niche": ["fitness", "tech", "fashion"] (array, only if mentioned),
-        "location": ["United States", "Canada"] (array, only if mentioned),
-        "verified": true/false (only if mentioned),
-        "followers": {"min": 0, "max": 0} (only if mentioned),
-        "engagement": {"min": 0, "max": 0} (only if mentioned)
-      }
-    }
-    
-    Examples:
-    - "fitness creators with high engagement" → {"searchTerm": "fitness", "filters": {"niche": ["fitness"], "engagement": {"min": 5, "max": 0}}}
-    - "verified tech YouTubers from US" → {"searchTerm": "tech", "filters": {"niche": ["tech"], "platform": ["YouTube"], "location": ["United States"], "verified": true}}
-    - "Alex" → {"searchTerm": "Alex", "filters": {}}
-    
-    Only return the JSON object, no other text.
-    `;
+Extract search terms and filters from the query. Return a JSON object with:
+{
+  "searchTerm": "main search keywords",
+  "filters": {
+    "platform": ["Instagram", "YouTube", "TikTok"] (array, only if mentioned),
+    "niche": ["fitness", "tech", "fashion"] (array, only if mentioned),
+    "location": ["United States", "Canada"] (array, only if mentioned),
+    "verified": true/false (only if mentioned),
+    "followers": {"min": 0, "max": 0} (only if mentioned),
+    "engagement": {"min": 0, "max": 0} (only if mentioned)
+  }
+}
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`, {
+Examples:
+- "fitness creators with high engagement" → {"searchTerm": "fitness", "filters": {"niche": ["fitness"], "engagement": {"min": 5, "max": 0}}}
+- "verified tech YouTubers from US" → {"searchTerm": "tech", "filters": {"niche": ["tech"], "platform": ["YouTube"], "location": ["United States"], "verified": true}}
+- "Alex" → {"searchTerm": "Alex", "filters": {}}
+
+Only return the JSON object, no other text.`;
+
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
+        'Authorization': `Bearer ${deepseekApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        contents: [{
-          parts: [{
-            text: prompt
-          }]
-        }],
-        generationConfig: {
-          temperature: 0,
-          maxOutputTokens: 500,
-        }
+        model: 'deepseek-chat',
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0,
+        max_tokens: 500,
       }),
     });
 
     if (!response.ok) {
-      console.error('Gemini API error:', response.status, response.statusText);
-      throw new Error(`Gemini API error: ${response.status}`);
+      console.error('DeepSeek API error:', response.status, response.statusText);
+      throw new Error(`DeepSeek API error: ${response.status}`);
     }
 
     const data = await response.json();
-    const content = data.candidates[0]?.content?.parts[0]?.text?.trim();
+    const content = data.choices[0]?.message?.content?.trim();
     
-    console.log('Gemini response:', content);
+    console.log('DeepSeek response:', content);
     
     // Parse the JSON response
     let result;
     try {
-      result = JSON.parse(content);
+      // Clean the response in case it has markdown code blocks
+      const cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
+      result = JSON.parse(cleanContent);
     } catch (parseError) {
-      console.error('Failed to parse Gemini response as JSON:', parseError);
+      console.error('Failed to parse DeepSeek response as JSON:', parseError);
       // Fallback to basic search
       result = {
         searchTerm: query,
