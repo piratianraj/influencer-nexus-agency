@@ -7,10 +7,12 @@ import { FilterOptions } from '@/components/AdvancedFilters';
 interface SearchResult {
   searchTerm: string;
   filters: Partial<FilterOptions>;
+  sessionId?: string;
 }
 
 export const useIntelligentSearch = () => {
   const [isSearching, setIsSearching] = useState(false);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const { toast } = useToast();
 
   const performIntelligentSearch = async (query: string): Promise<SearchResult | null> => {
@@ -20,17 +22,20 @@ export const useIntelligentSearch = () => {
 
     setIsSearching(true);
     try {
-      console.log('Performing intelligent search for:', query);
+      console.log('Performing RAG intelligent search for:', query);
       
-      const { data, error } = await supabase.functions.invoke('intelligent-search', {
-        body: { query }
+      // Call the new RAG-enabled search function
+      const { data, error } = await supabase.functions.invoke('rag-intelligent-search', {
+        body: { 
+          query,
+          sessionId: currentSessionId 
+        }
       });
 
       if (error) {
-        console.error('Intelligent search error:', error);
-        console.log('Falling back to basic text search');
+        console.error('RAG search error:', error);
+        console.log('Falling back to basic search');
         
-        // Show a toast to inform user about the fallback
         toast({
           title: "AI Search Unavailable",
           description: "Using basic search instead. Try searching for creator names or niches.",
@@ -43,19 +48,23 @@ export const useIntelligentSearch = () => {
         };
       }
 
-      console.log('Intelligent search result:', data);
+      console.log('RAG search result:', data);
+      
+      // Store session ID for feedback tracking
+      if (data.sessionId) {
+        setCurrentSessionId(data.sessionId);
+      }
+      
       return data as SearchResult;
     } catch (error) {
       console.error('Unexpected search error:', error);
       
-      // Show error toast
       toast({
         title: "Search Error",
         description: "Search temporarily unavailable. Using basic text search.",
         variant: "destructive"
       });
       
-      // Always return a fallback
       return {
         searchTerm: query,
         filters: {}
@@ -65,5 +74,16 @@ export const useIntelligentSearch = () => {
     }
   };
 
-  return { performIntelligentSearch, isSearching };
+  const getCurrentSessionId = () => currentSessionId;
+
+  const clearSession = () => {
+    setCurrentSessionId(null);
+  };
+
+  return { 
+    performIntelligentSearch, 
+    isSearching,
+    getCurrentSessionId,
+    clearSession
+  };
 };

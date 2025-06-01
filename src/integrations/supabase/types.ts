@@ -51,12 +51,242 @@ export type Database = {
         }
         Relationships: []
       }
+      learned_patterns: {
+        Row: {
+          confidence_score: number | null
+          created_at: string
+          id: string
+          input_text: string | null
+          last_used_at: string | null
+          output_structure: Json | null
+          pattern_type: string
+          usage_count: number | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          input_text?: string | null
+          last_used_at?: string | null
+          output_structure?: Json | null
+          pattern_type: string
+          usage_count?: number | null
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string
+          id?: string
+          input_text?: string | null
+          last_used_at?: string | null
+          output_structure?: Json | null
+          pattern_type?: string
+          usage_count?: number | null
+        }
+        Relationships: []
+      }
+      query_embeddings: {
+        Row: {
+          created_at: string
+          embedding: string | null
+          id: string
+          query_text: string
+          search_session_id: string | null
+          success_score: number | null
+        }
+        Insert: {
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          query_text: string
+          search_session_id?: string | null
+          success_score?: number | null
+        }
+        Update: {
+          created_at?: string
+          embedding?: string | null
+          id?: string
+          query_text?: string
+          search_session_id?: string | null
+          success_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "query_embeddings_search_session_id_fkey"
+            columns: ["search_session_id"]
+            isOneToOne: false
+            referencedRelation: "search_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      search_interactions: {
+        Row: {
+          creator_id: string | null
+          id: string
+          interaction_timestamp: string
+          interaction_type: string
+          search_session_id: string | null
+        }
+        Insert: {
+          creator_id?: string | null
+          id?: string
+          interaction_timestamp?: string
+          interaction_type: string
+          search_session_id?: string | null
+        }
+        Update: {
+          creator_id?: string | null
+          id?: string
+          interaction_timestamp?: string
+          interaction_type?: string
+          search_session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "search_interactions_search_session_id_fkey"
+            columns: ["search_session_id"]
+            isOneToOne: false
+            referencedRelation: "search_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      search_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          parsed_filters: Json | null
+          results_count: number | null
+          session_duration_seconds: number | null
+          success_score: number | null
+          updated_at: string
+          user_clicked_results: boolean | null
+          user_query: string
+          user_refined_search: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          parsed_filters?: Json | null
+          results_count?: number | null
+          session_duration_seconds?: number | null
+          success_score?: number | null
+          updated_at?: string
+          user_clicked_results?: boolean | null
+          user_query: string
+          user_refined_search?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          parsed_filters?: Json | null
+          results_count?: number | null
+          session_duration_seconds?: number | null
+          success_score?: number | null
+          updated_at?: string
+          user_clicked_results?: boolean | null
+          user_query?: string
+          user_refined_search?: boolean | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      binary_quantize: {
+        Args: { "": string } | { "": unknown }
+        Returns: unknown
+      }
+      halfvec_avg: {
+        Args: { "": number[] }
+        Returns: unknown
+      }
+      halfvec_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      halfvec_send: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      halfvec_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
+      }
+      hnsw_bit_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnsw_halfvec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnsw_sparsevec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      hnswhandler: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflat_bit_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflat_halfvec_support: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      ivfflathandler: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      l2_norm: {
+        Args: { "": unknown } | { "": unknown }
+        Returns: number
+      }
+      l2_normalize: {
+        Args: { "": string } | { "": unknown } | { "": unknown }
+        Returns: string
+      }
+      sparsevec_out: {
+        Args: { "": unknown }
+        Returns: unknown
+      }
+      sparsevec_send: {
+        Args: { "": unknown }
+        Returns: string
+      }
+      sparsevec_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
+      }
+      vector_avg: {
+        Args: { "": number[] }
+        Returns: string
+      }
+      vector_dims: {
+        Args: { "": string } | { "": unknown }
+        Returns: number
+      }
+      vector_norm: {
+        Args: { "": string }
+        Returns: number
+      }
+      vector_out: {
+        Args: { "": string }
+        Returns: unknown
+      }
+      vector_send: {
+        Args: { "": string }
+        Returns: string
+      }
+      vector_typmod_in: {
+        Args: { "": unknown[] }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never

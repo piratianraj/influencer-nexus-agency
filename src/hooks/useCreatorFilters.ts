@@ -1,5 +1,7 @@
 
 import { FilterOptions } from '@/components/AdvancedFilters';
+import { useSearchFeedback } from '@/hooks/useSearchFeedback';
+import { useIntelligentSearch } from '@/hooks/useIntelligentSearch';
 
 interface Creator {
   id: string;
@@ -19,6 +21,9 @@ interface Creator {
 }
 
 export const useCreatorFilters = () => {
+  const { recordFeedback } = useSearchFeedback();
+  const { getCurrentSessionId } = useIntelligentSearch();
+
   const applyFilters = (creators: Creator[], filters: FilterOptions) => {
     console.log('Applying filters:', filters, 'to creators:', creators.length);
     
@@ -113,5 +118,34 @@ export const useCreatorFilters = () => {
     return filtered;
   };
 
-  return { applyFilters, applySearch };
+  // Function to record when user clicks on a creator
+  const recordCreatorClick = (creatorId: string) => {
+    const sessionId = getCurrentSessionId();
+    if (sessionId) {
+      recordFeedback({
+        sessionId,
+        action: 'click',
+        creatorId
+      });
+    }
+  };
+
+  // Function to record when user initiates outreach
+  const recordCreatorOutreach = (creatorId: string) => {
+    const sessionId = getCurrentSessionId();
+    if (sessionId) {
+      recordFeedback({
+        sessionId,
+        action: 'outreach',
+        creatorId
+      });
+    }
+  };
+
+  return { 
+    applyFilters, 
+    applySearch,
+    recordCreatorClick,
+    recordCreatorOutreach
+  };
 };

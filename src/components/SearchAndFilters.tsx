@@ -1,9 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Filter, Brain, Loader2, Lightbulb } from 'lucide-react';
 import { useIntelligentSearch } from '@/hooks/useIntelligentSearch';
+import { useSearchFeedback } from '@/hooks/useSearchFeedback';
 import { FilterOptions } from '@/components/AdvancedFilters';
 
 interface SearchAndFiltersProps {
@@ -12,6 +13,7 @@ interface SearchAndFiltersProps {
   showFilters: boolean;
   onToggleFilters: () => void;
   onIntelligentSearch: (searchTerm: string, filters: Partial<FilterOptions>) => void;
+  resultsCount?: number;
 }
 
 const SearchAndFilters = ({ 
@@ -19,11 +21,17 @@ const SearchAndFilters = ({
   onSearchChange, 
   showFilters, 
   onToggleFilters,
-  onIntelligentSearch 
+  onIntelligentSearch,
+  resultsCount = 0
 }: SearchAndFiltersProps) => {
   const [aiQuery, setAiQuery] = useState('');
   const [showExamples, setShowExamples] = useState(false);
-  const { performIntelligentSearch, isSearching } = useIntelligentSearch();
+  const [searchStartTime, setSearchStartTime] = useState<number | null>(null);
+  
+  const { performIntelligentSearch, isSearching, getCurrentSessionId } = useIntelligentSearch();
+  const { recordFeedback, learnFromSuccess } = useSearchFeedback();
+  
+  const lastSearchRef = useRef<{ query: string; filters: any; sessionId?: string }>({ query: '', filters: {} });
 
   const exampleQueries = [
     "fitness creators with high engagement",
@@ -34,13 +42,45 @@ const SearchAndFilters = ({
     "verified travel creators from Europe"
   ];
 
+  // Record feedback when results are viewed
+  useEffect(() => {
+    const sessionId = getCurrentSessionId();
+    const lastSearch = lastSearchRef.current;
+    
+    if (sessionId && resultsCount > 0 && lastSearch.query) {
+      const sessionDuration = searchStartTime ? Math.floor((Date.now() - searchStartTime) / 1000) : undefined;
+      
+      recordFeedback({
+        sessionId,
+        action: 'view_results',
+        resultsCount,
+        sessionDuration
+      });
+
+      // If user got good results and didn't need to refine, this is a success
+      if (resultsCount > 3) {
+        learnFromSuccess(sessionId, lastSearch.query, lastSearch.filters);
+      }
+    }
+  }, [resultsCount, getCurrentSessionId, recordFeedback, learnFromSuccess, searchStartTime]);
+
   const handleAiSearch = async () => {
     if (!aiQuery.trim()) return;
     
+    setSearchStartTime(Date.now());
     console.log('Performing AI search with query:', aiQuery);
+    
     const result = await performIntelligentSearch(aiQuery);
     if (result) {
       console.log('AI search result:', result);
+      
+      // Store last search for feedback tracking
+      lastSearchRef.current = {
+        query: aiQuery,
+        filters: result.filters,
+        sessionId: result.sessionId
+      };
+      
       onIntelligentSearch(result.searchTerm, result.filters);
       onSearchChange(result.searchTerm);
       setAiQuery('');
@@ -64,13 +104,24 @@ const SearchAndFilters = ({
     onSearchChange(value);
   };
 
+  const handleFilterToggle = () => {
+    const sessionId = getCurrentSessionId();
+    if (sessionId) {
+      recordFeedback({
+        sessionId,
+        action: 'refine_search'
+      });
+    }
+    onToggleFilters();
+  };
+
   return (
     <div className="flex flex-col gap-4">
       {/* AI-Powered Natural Language Search */}
       <div className="flex flex-col gap-4 p-6 bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 rounded-xl border border-blue-200/50">
         <div className="flex items-center gap-2 mb-2">
           <Brain className="h-5 w-5 text-blue-600" />
-          <h3 className="font-semibold text-gray-800">AI-Powered Natural Language Search</h3>
+          <h3 className="font-semibold text-gray-800">AI-Powered Search (Learning Enabled)</h3>
           <Button
             variant="ghost"
             size="sm"
@@ -104,7 +155,7 @@ const SearchAndFilters = ({
             <Brain className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-500 h-5 w-5" />
             <Input
               type="text"
-              placeholder="Try: 'fitness creators with high engagement' or 'tech YouTubers from US' or just search names..."
+              placeholder="The AI learns from each search to get better! Try: 'fitness creators with high engagement'"
               value={aiQuery}
               onChange={(e) => handleDirectSearch(e.target.value)}
               onKeyPress={handleKeyPress}
@@ -126,7 +177,7 @@ const SearchAndFilters = ({
             </Button>
             <Button 
               variant="outline" 
-              onClick={onToggleFilters}
+              onClick={handleFilterToggle}
               className="lg:w-auto w-full bg-white/80 backdrop-blur-sm hover:bg-white"
             >
               <Filter className="h-4 w-4 mr-2" />
@@ -136,7 +187,7 @@ const SearchAndFilters = ({
         </div>
 
         <div className="text-xs text-gray-600">
-          <p><strong>💡 Pro tip:</strong> Use natural language like "show me fitness influencers with over 100k followers from India" or "find verified tech creators with high engagement"</p>
+          <p><strong>🧠 Smart Learning:</strong> This AI learns from every search and interaction to provide better results over time!</p>
         </div>
       </div>
     </div>
