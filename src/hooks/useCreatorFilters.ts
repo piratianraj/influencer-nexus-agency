@@ -24,31 +24,46 @@ export const useCreatorFilters = () => {
     
     return creators.filter(creator => {
       // Platform filter
-      if (filters.platform.length > 0 && !filters.platform.some(p => creator.platforms.includes(p))) {
+      if (filters.platform && filters.platform.length > 0 && !filters.platform.some(p => creator.platforms.includes(p))) {
         return false;
       }
       
       // Followers filter
-      if (filters.followers.min > 0 && creator.followers < filters.followers.min) return false;
-      if (filters.followers.max > 0 && creator.followers > filters.followers.max) return false;
+      if (filters.followers) {
+        if (filters.followers.min > 0 && creator.followers < filters.followers.min) return false;
+        if (filters.followers.max > 0 && creator.followers > filters.followers.max) return false;
+      }
       
       // Engagement filter
-      if (filters.engagement.min > 0 && creator.engagement < filters.engagement.min) return false;
-      if (filters.engagement.max > 0 && creator.engagement > filters.engagement.max) return false;
+      if (filters.engagement) {
+        if (filters.engagement.min > 0 && creator.engagement < filters.engagement.min) return false;
+        if (filters.engagement.max > 0 && creator.engagement > filters.engagement.max) return false;
+      }
       
       // Niche filter
-      if (filters.niche.length > 0 && !filters.niche.some(n => creator.niche.includes(n))) {
+      if (filters.niche && filters.niche.length > 0 && !filters.niche.some(n => 
+        creator.niche.some(creatorNiche => 
+          creatorNiche.toLowerCase().includes(n.toLowerCase()) || 
+          n.toLowerCase().includes(creatorNiche.toLowerCase())
+        )
+      )) {
         return false;
       }
       
-      // Location filter
-      if (filters.location.length > 0 && !filters.location.includes(creator.location)) {
-        return false;
+      // Location filter (more flexible matching)
+      if (filters.location && filters.location.length > 0) {
+        const locationMatch = filters.location.some(filterLocation =>
+          creator.location.toLowerCase().includes(filterLocation.toLowerCase()) ||
+          filterLocation.toLowerCase().includes(creator.location.toLowerCase())
+        );
+        if (!locationMatch) return false;
       }
       
       // Price filter
-      if (filters.priceRange.min > 0 && creator.rates.post < filters.priceRange.min) return false;
-      if (filters.priceRange.max > 0 && creator.rates.post > filters.priceRange.max) return false;
+      if (filters.priceRange) {
+        if (filters.priceRange.min > 0 && creator.rates.post < filters.priceRange.min) return false;
+        if (filters.priceRange.max > 0 && creator.rates.post > filters.priceRange.max) return false;
+      }
       
       // Verified filter
       if (filters.verified !== null && creator.verified !== filters.verified) return false;
@@ -65,16 +80,33 @@ export const useCreatorFilters = () => {
     
     const searchLower = searchTerm.toLowerCase();
     const filtered = creators.filter(creator => {
-      // More forgiving search - includes partial matches
+      // Comprehensive search across all relevant fields
       const nameMatch = creator.name.toLowerCase().includes(searchLower);
-      const nicheMatch = creator.niche.some(n => n.toLowerCase().includes(searchLower));
       const usernameMatch = creator.username.toLowerCase().includes(searchLower);
       const locationMatch = creator.location.toLowerCase().includes(searchLower);
       
-      // Also search in platforms
-      const platformMatch = creator.platforms.some(p => p.toLowerCase().includes(searchLower));
+      // Enhanced niche matching with partial word support
+      const nicheMatch = creator.niche.some(n => 
+        n.toLowerCase().includes(searchLower) || 
+        searchLower.includes(n.toLowerCase())
+      );
       
-      return nameMatch || nicheMatch || usernameMatch || locationMatch || platformMatch;
+      // Platform matching
+      const platformMatch = creator.platforms.some(p => 
+        p.toLowerCase().includes(searchLower) || 
+        searchLower.includes(p.toLowerCase())
+      );
+      
+      // Multi-word search support
+      const searchWords = searchLower.split(' ').filter(word => word.length > 2);
+      const multiWordMatch = searchWords.length > 1 ? searchWords.every(word =>
+        creator.name.toLowerCase().includes(word) ||
+        creator.niche.some(n => n.toLowerCase().includes(word)) ||
+        creator.location.toLowerCase().includes(word) ||
+        creator.platforms.some(p => p.toLowerCase().includes(word))
+      ) : false;
+      
+      return nameMatch || nicheMatch || usernameMatch || locationMatch || platformMatch || multiWordMatch;
     });
     
     console.log('Search term:', searchTerm, 'filtered creators:', filtered.length, 'from total:', creators.length);

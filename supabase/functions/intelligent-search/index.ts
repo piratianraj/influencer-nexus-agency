@@ -14,7 +14,7 @@ serve(async (req) => {
 
   try {
     const { query } = await req.json();
-    console.log('Intelligent search query:', query);
+    console.log('Natural language search query:', query);
 
     const deepseekApiKey = Deno.env.get('DEEPSEEK_API_KEY');
     
@@ -28,24 +28,41 @@ serve(async (req) => {
       });
     }
 
-    const prompt = `Analyze this search query for creator discovery: "${query}"
-    
-Extract search terms and filters from the query. Return a JSON object with:
+    const prompt = `You are an AI assistant that converts natural language search queries into structured JSON filters for a creator/influencer database.
+
+Available database fields:
+- name (text): Creator's full name
+- handle (text): Creator's social media handle/username
+- platform (text): Social media platform (Instagram, YouTube, TikTok, etc.)
+- niche (text): Content category/niche (fitness, tech, fashion, food, travel, etc.)
+- country (text): Creator's location/country
+- followers (bigint): Number of followers
+- engagement_rate (float): Engagement rate percentage
+- collab_status (text): Collaboration status
+- email (text): Contact email
+- contact_number (text): Contact number
+- last_active (text): Last activity date
+
+Convert this search query: "${query}"
+
+Return ONLY a JSON object with this exact structure:
 {
-  "searchTerm": "main search keywords",
+  "searchTerm": "main search keywords for text matching",
   "filters": {
     "platform": ["Instagram", "YouTube", "TikTok"] (array, only if mentioned),
     "niche": ["fitness", "tech", "fashion"] (array, only if mentioned),
-    "location": ["United States", "Canada"] (array, only if mentioned),
-    "verified": true/false (only if mentioned),
-    "followers": {"min": 0, "max": 0} (only if mentioned),
-    "engagement": {"min": 0, "max": 0} (only if mentioned)
+    "country": ["United States", "Canada", "India"] (array, only if mentioned),
+    "followers": {"operator": ">", "value": 50000} (only if mentioned, operators: >, <, >=, <=, =),
+    "engagement_rate": {"operator": ">", "value": 5.0} (only if mentioned, operators: >, <, >=, <=, =),
+    "collab_status": "active" (only if mentioned)
   }
 }
 
 Examples:
-- "fitness creators with high engagement" → {"searchTerm": "fitness", "filters": {"niche": ["fitness"], "engagement": {"min": 5, "max": 0}}}
-- "verified tech YouTubers from US" → {"searchTerm": "tech", "filters": {"niche": ["tech"], "platform": ["YouTube"], "location": ["United States"], "verified": true}}
+- "fitness creators with high engagement" → {"searchTerm": "fitness", "filters": {"niche": ["fitness"], "engagement_rate": {"operator": ">", "value": 5.0}}}
+- "tech YouTubers from US with 100k+ followers" → {"searchTerm": "tech", "filters": {"niche": ["tech"], "platform": ["YouTube"], "country": ["United States"], "followers": {"operator": ">", "value": 100000}}}
+- "fashion influencers in India" → {"searchTerm": "fashion", "filters": {"niche": ["fashion"], "country": ["India"]}}
+- "active creators with low engagement" → {"searchTerm": "", "filters": {"collab_status": "active", "engagement_rate": {"operator": "<", "value": 2.0}}}
 - "Alex" → {"searchTerm": "Alex", "filters": {}}
 
 Only return the JSON object, no other text.`;
@@ -64,8 +81,8 @@ Only return the JSON object, no other text.`;
             content: prompt
           }
         ],
-        temperature: 0,
-        max_tokens: 500,
+        temperature: 0.1,
+        max_tokens: 800,
       }),
     });
 
@@ -85,6 +102,53 @@ Only return the JSON object, no other text.`;
       // Clean the response in case it has markdown code blocks
       const cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '');
       result = JSON.parse(cleanContent);
+      
+      // Validate and transform the result to match existing filter structure
+      const transformedResult = {
+        searchTerm: result.searchTerm || '',
+        filters: {}
+      };
+
+      // Transform filters to match existing FilterOptions interface
+      if (result.filters.platform) {
+        transformedResult.filters.platform = result.filters.platform;
+      }
+      if (result.filters.niche) {
+        transformedResult.filters.niche = result.filters.niche;
+      }
+      if (result.filters.country) {
+        transformedResult.filters.location = result.filters.country; // Map country to location
+      }
+      if (result.filters.followers) {
+        const followerFilter = result.filters.followers;
+        if (followerFilter.operator === '>') {
+          transformedResult.filters.followers = { min: followerFilter.value, max: 0 };
+        } else if (followerFilter.operator === '<') {
+          transformedResult.filters.followers = { min: 0, max: followerFilter.value };
+        } else if (followerFilter.operator === '>=') {
+          transformedResult.filters.followers = { min: followerFilter.value, max: 0 };
+        } else if (followerFilter.operator === '<=') {
+          transformedResult.filters.followers = { min: 0, max: followerFilter.value };
+        } else {
+          transformedResult.filters.followers = { min: followerFilter.value, max: followerFilter.value };
+        }
+      }
+      if (result.filters.engagement_rate) {
+        const engagementFilter = result.filters.engagement_rate;
+        if (engagementFilter.operator === '>') {
+          transformedResult.filters.engagement = { min: engagementFilter.value, max: 0 };
+        } else if (engagementFilter.operator === '<') {
+          transformedResult.filters.engagement = { min: 0, max: engagementFilter.value };
+        } else if (engagementFilter.operator === '>=') {
+          transformedResult.filters.engagement = { min: engagementFilter.value, max: 0 };
+        } else if (engagementFilter.operator === '<=') {
+          transformedResult.filters.engagement = { min: 0, max: engagementFilter.value };
+        } else {
+          transformedResult.filters.engagement = { min: engagementFilter.value, max: engagementFilter.value };
+        }
+      }
+
+      result = transformedResult;
     } catch (parseError) {
       console.error('Failed to parse DeepSeek response as JSON:', parseError);
       // Fallback to basic search
@@ -94,6 +158,7 @@ Only return the JSON object, no other text.`;
       };
     }
 
+    console.log('Final transformed result:', result);
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
