@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -19,27 +20,71 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
   const [name, setName] = useState('');
   const [userType, setUserType] = useState<'brand' | 'creator'>('brand');
   const { login, signup, loginAsGuest, isLoading } = useAuth();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      if (mode === 'login') {
-        await login(email, password);
-      } else {
-        await signup(email, password, name, userType);
+    
+    if (mode === 'login') {
+      const { error } = await login(email, password);
+      if (error) {
+        toast({
+          title: "Login Failed",
+          description: error,
+          variant: "destructive"
+        });
+        return;
       }
-      onClose();
-    } catch (error) {
-      console.error('Auth error:', error);
+      toast({
+        title: "Welcome back!",
+        description: "You have successfully logged in.",
+      });
+    } else {
+      if (!name.trim()) {
+        toast({
+          title: "Name Required",
+          description: "Please enter your full name.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const { error } = await signup(email, password, name, userType);
+      if (error) {
+        toast({
+          title: "Signup Failed",
+          description: error,
+          variant: "destructive"
+        });
+        return;
+      }
+      toast({
+        title: "Account Created!",
+        description: "Please check your email to verify your account.",
+      });
     }
+    
+    onClose();
+    // Reset form
+    setEmail('');
+    setPassword('');
+    setName('');
   };
 
   const handleGuestLogin = async () => {
     try {
       await loginAsGuest();
+      toast({
+        title: "Guest Session Started",
+        description: "You can now browse and search creators.",
+      });
       onClose();
     } catch (error) {
-      console.error('Guest login error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start guest session.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -62,6 +107,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
+                  placeholder="Enter your full name"
                 />
               </div>
               <div>
@@ -70,7 +116,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
                   id="userType"
                   value={userType}
                   onChange={(e) => setUserType(e.target.value as 'brand' | 'creator')}
-                  className="w-full p-2 border rounded-md"
+                  className="w-full p-2 border rounded-md bg-white"
                 >
                   <option value="brand">Brand/Company</option>
                   <option value="creator">Content Creator</option>
@@ -86,6 +132,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+              placeholder="Enter your email"
             />
           </div>
           <div>
@@ -96,6 +143,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              placeholder="Enter your password"
+              minLength={6}
             />
           </div>
           <Button type="submit" className="w-full" disabled={isLoading}>

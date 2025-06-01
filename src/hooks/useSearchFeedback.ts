@@ -1,6 +1,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface FeedbackData {
   sessionId: string;
@@ -12,6 +13,7 @@ interface FeedbackData {
 
 export const useSearchFeedback = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const { user, guestId } = useAuth();
 
   const recordFeedback = async (feedback: FeedbackData) => {
     if (!feedback.sessionId) return;
@@ -19,6 +21,7 @@ export const useSearchFeedback = () => {
     setIsLoading(true);
     try {
       console.log('Recording feedback:', feedback);
+      console.log('User ID:', user?.id, 'Guest ID:', guestId);
 
       // Record interaction
       if (feedback.creatorId && feedback.action !== 'view_results') {
@@ -31,7 +34,7 @@ export const useSearchFeedback = () => {
           });
       }
 
-      // Update search session with feedback
+      // Update search session with feedback and user tracking
       const updates: any = {};
       
       if (feedback.action === 'click' || feedback.action === 'outreach' || feedback.action === 'save') {
@@ -48,6 +51,14 @@ export const useSearchFeedback = () => {
       
       if (feedback.sessionDuration !== undefined) {
         updates.session_duration_seconds = feedback.sessionDuration;
+      }
+
+      // Add user tracking
+      if (user?.id) {
+        updates.user_id = user.id;
+      }
+      if (guestId && !user?.id) {
+        updates.guest_user_id = guestId;
       }
 
       // Calculate success score based on user interactions

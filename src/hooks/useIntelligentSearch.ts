@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { FilterOptions } from '@/components/AdvancedFilters';
 
 interface SearchResult {
@@ -14,6 +15,7 @@ export const useIntelligentSearch = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user, guestId } = useAuth();
 
   const performIntelligentSearch = async (query: string): Promise<SearchResult | null> => {
     if (!query.trim()) {
@@ -23,12 +25,15 @@ export const useIntelligentSearch = () => {
     setIsSearching(true);
     try {
       console.log('Performing RAG intelligent search for:', query);
+      console.log('User ID:', user?.id, 'Guest ID:', guestId);
       
       // Call the new RAG-enabled search function
       const { data, error } = await supabase.functions.invoke('rag-intelligent-search', {
         body: { 
           query,
-          sessionId: currentSessionId 
+          sessionId: currentSessionId,
+          userId: user?.id || null,
+          guestUserId: guestId || null
         }
       });
 

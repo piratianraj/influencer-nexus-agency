@@ -51,6 +51,27 @@ export type Database = {
         }
         Relationships: []
       }
+      guest_users: {
+        Row: {
+          created_at: string
+          id: string
+          last_active: string
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_active?: string
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_active?: string
+          session_id?: string
+        }
+        Relationships: []
+      }
       learned_patterns: {
         Row: {
           confidence_score: number | null
@@ -81,6 +102,42 @@ export type Database = {
           output_structure?: Json | null
           pattern_type?: string
           usage_count?: number | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          company: string | null
+          created_at: string
+          email: string | null
+          id: string
+          industry: string | null
+          name: string
+          updated_at: string
+          user_type: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          id: string
+          industry?: string | null
+          name: string
+          updated_at?: string
+          user_type: string
+        }
+        Update: {
+          avatar_url?: string | null
+          company?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          industry?: string | null
+          name?: string
+          updated_at?: string
+          user_type?: string
         }
         Relationships: []
       }
@@ -154,6 +211,7 @@ export type Database = {
       search_sessions: {
         Row: {
           created_at: string
+          guest_user_id: string | null
           id: string
           parsed_filters: Json | null
           results_count: number | null
@@ -161,11 +219,13 @@ export type Database = {
           success_score: number | null
           updated_at: string
           user_clicked_results: boolean | null
+          user_id: string | null
           user_query: string
           user_refined_search: boolean | null
         }
         Insert: {
           created_at?: string
+          guest_user_id?: string | null
           id?: string
           parsed_filters?: Json | null
           results_count?: number | null
@@ -173,11 +233,13 @@ export type Database = {
           success_score?: number | null
           updated_at?: string
           user_clicked_results?: boolean | null
+          user_id?: string | null
           user_query: string
           user_refined_search?: boolean | null
         }
         Update: {
           created_at?: string
+          guest_user_id?: string | null
           id?: string
           parsed_filters?: Json | null
           results_count?: number | null
@@ -185,10 +247,26 @@ export type Database = {
           success_score?: number | null
           updated_at?: string
           user_clicked_results?: boolean | null
+          user_id?: string | null
           user_query?: string
           user_refined_search?: boolean | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "search_sessions_guest_user_id_fkey"
+            columns: ["guest_user_id"]
+            isOneToOne: false
+            referencedRelation: "guest_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "search_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
