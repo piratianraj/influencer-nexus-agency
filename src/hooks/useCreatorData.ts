@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +23,8 @@ export const useCreatorData = () => {
   const [creators, setCreators] = useState<Creator[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
 
   const generateAvatarUrl = (name: string) => {
     const initials = name.split(' ').map(n => n[0]).join('').toUpperCase();
@@ -34,80 +35,6 @@ export const useCreatorData = () => {
     const baseRate = Math.floor(followers / 1000) * 2;
     const engagementMultiplier = engagement / 5;
     return Math.max(Math.floor(baseRate * engagementMultiplier), 100);
-  };
-
-  const fetchCreators = async () => {
-    try {
-      setLoading(true);
-      console.log('Fetching creators from database...');
-      
-      const { data, error } = await supabase
-        .from('creator database')
-        .select('*');
-
-      console.log('Database response:', { data, error, count: data?.length || 0 });
-
-      if (error) {
-        console.error('Error fetching creators:', error);
-        toast({
-          title: "Database Error",
-          description: `Failed to fetch creators: ${error.message}`,
-          variant: "destructive"
-        });
-        
-        // Fallback to mock data if database fails
-        setCreators(getMockCreators());
-        return;
-      }
-
-      if (!data || data.length === 0) {
-        console.log('No creators found in database, using mock data');
-        setCreators(getMockCreators());
-        toast({
-          title: "No Data",
-          description: "No creators found in database. Using sample data.",
-          variant: "default"
-        });
-        return;
-      }
-
-      const transformedCreators: Creator[] = data.map((creator: any) => {
-        const niches = creator.niche ? creator.niche.split(',').map((n: string) => n.trim()) : ['general'];
-        const platforms = creator.platform ? [creator.platform] : ['Instagram'];
-        const followers = creator.followers || Math.floor(Math.random() * 100000) + 10000;
-        const engagement = creator.engagement_rate || Math.floor(Math.random() * 10) + 1;
-        
-        return {
-          id: creator.id || Math.random().toString(),
-          name: creator.name || 'Unknown Creator',
-          username: creator.handle || '@unknown',
-          avatar: generateAvatarUrl(creator.name || 'Unknown'),
-          location: creator.country || 'Unknown',
-          niche: niches,
-          platforms: platforms,
-          followers: followers,
-          engagement: engagement,
-          rates: {
-            post: calculatePostRate(followers, engagement),
-            story: Math.floor(calculatePostRate(followers, engagement) * 0.3)
-          },
-          verified: Math.random() > 0.5
-        };
-      });
-
-      console.log('Transformed creators:', transformedCreators.length);
-      setCreators(transformedCreators);
-    } catch (error) {
-      console.error('Unexpected error:', error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred. Using sample data.",
-        variant: "destructive"
-      });
-      setCreators(getMockCreators());
-    } finally {
-      setLoading(false);
-    }
   };
 
   const getMockCreators = (): Creator[] => [
@@ -178,9 +105,87 @@ export const useCreatorData = () => {
     }
   ];
 
-  useEffect(() => {
-    fetchCreators();
-  }, []);
+  const fetchCreators = async (pageToFetch = page) => {
+    try {
+      setLoading(true);
+      const cacheKey = `creators-page-${pageToFetch}`;
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        setCreators(JSON.parse(cached));
+        setLoading(false);
+        return;
+      }
+      console.log('Fetching creators from database...');
+      const from = (pageToFetch - 1) * pageSize;
+      const to = from + pageSize - 1;
+      const { data, error } = await supabase
+        .from('creator database')
+        .select('*')
+        .range(from, to);
+      console.log('Database response:', { data, error, count: data?.length || 0 });
+      if (error) {
+        console.error('Error fetching creators:', error);
+        toast({
+          title: "Database Error",
+          description: `Failed to fetch creators: ${error.message}`,
+          variant: "destructive"
+        });
+        setCreators(getMockCreators());
+        setLoading(false);
+        return;
+      }
+      if (!data || data.length === 0) {
+        console.log('No creators found in database, using mock data');
+        setCreators(getMockCreators());
+        toast({
+          title: "No Data",
+          description: "No creators found in database. Using sample data.",
+          variant: "default"
+        });
+        setLoading(false);
+        return;
+      }
+      const transformedCreators: Creator[] = data.map((creator: any) => {
+        const niches = creator.niche ? creator.niche.split(',').map((n: string) => n.trim()) : ['general'];
+        const platforms = creator.platform ? [creator.platform] : ['Instagram'];
+        const followers = creator.followers || Math.floor(Math.random() * 100000) + 10000;
+        const engagement = creator.engagement_rate || Math.floor(Math.random() * 10) + 1;
+        return {
+          id: creator.id || Math.random().toString(),
+          name: creator.name || 'Unknown Creator',
+          username: creator.handle || '@unknown',
+          avatar: generateAvatarUrl(creator.name || 'Unknown'),
+          location: creator.country || 'Unknown',
+          niche: niches,
+          platforms: platforms,
+          followers: followers,
+          engagement: engagement,
+          rates: {
+            post: calculatePostRate(followers, engagement),
+            story: Math.floor(calculatePostRate(followers, engagement) * 0.3)
+          },
+          verified: Math.random() > 0.5
+        };
+      });
+      localStorage.setItem(cacheKey, JSON.stringify(transformedCreators));
+      setCreators(transformedCreators);
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Using sample data.",
+        variant: "destructive"
+      });
+      setCreators(getMockCreators());
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  return { creators, loading, refetch: fetchCreators };
+  useEffect(() => {
+    fetchCreators(page);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [page]);
+
+  return { creators, loading, refetch: fetchCreators, page, setPage, pageSize };
 };

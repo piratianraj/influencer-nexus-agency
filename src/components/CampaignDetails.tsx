@@ -38,6 +38,7 @@ interface CampaignDetailsProps {
   campaign: Campaign;
   onBack: () => void;
   onViewReport?: () => void;
+  onEdit?: () => void;
 }
 
 // Mock influencer data
@@ -93,7 +94,8 @@ const mockInfluencers: Record<string, Influencer[]> = {
 export const CampaignDetails: React.FC<CampaignDetailsProps> = ({ 
   campaign, 
   onBack, 
-  onViewReport 
+  onViewReport, 
+  onEdit
 }) => {
   const influencers = mockInfluencers[campaign.id] || [];
 
@@ -160,6 +162,11 @@ export const CampaignDetails: React.FC<CampaignDetailsProps> = ({
                   View Report
                 </Button>
               )}
+              {onEdit && (
+                <Button onClick={onEdit} className="flex items-center gap-2" variant="outline">
+                  Edit Campaign
+                </Button>
+              )}
               <Badge className={getStatusColor(campaign.status)}>
                 {campaign.status}
               </Badge>
@@ -177,7 +184,7 @@ export const CampaignDetails: React.FC<CampaignDetailsProps> = ({
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <WorkflowGuide currentStep={campaign.workflow_step} />
+              <WorkflowGuide currentStep={campaign.workflow_step} onEdit={onEdit} />
             </CardContent>
           </Card>
         )}
