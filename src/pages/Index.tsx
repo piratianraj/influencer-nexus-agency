@@ -40,6 +40,7 @@ const Index = () => {
             
             <nav className="hidden md:flex space-x-8">
               <Link to="/" className="text-gray-700 hover:text-blue-600 font-medium">Home</Link>
+              <Link to="/campaigns" className="text-gray-700 hover:text-blue-600 font-medium">Campaigns</Link>
               <Link to="/discovery" className="text-gray-700 hover:text-blue-600 font-medium">Discovery</Link>
               <Link to="/analytics" className="text-gray-700 hover:text-blue-600 font-medium">Analytics</Link>
             </nav>
@@ -93,7 +94,17 @@ const Index = () => {
           {user ? (
             <div className="bg-white p-6 rounded-lg shadow-sm border mb-8">
               <h3 className="text-lg font-semibold mb-4">Welcome back, {user.name}!</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Link to="/campaigns">
+                  <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                    <CardContent className="p-4 text-center">
+                      <Users className="h-8 w-8 mx-auto mb-2 text-purple-600" />
+                      <h4 className="font-semibold">Campaigns</h4>
+                      <p className="text-sm text-gray-600">Manage campaigns</p>
+                    </CardContent>
+                  </Card>
+                </Link>
+                
                 <Link to="/discovery">
                   <Card className="hover:shadow-md transition-shadow cursor-pointer">
                     <CardContent className="p-4 text-center">
@@ -119,7 +130,7 @@ const Index = () => {
                   onClick={() => setPaymentModalOpen(true)}
                 >
                   <CardContent className="p-4 text-center">
-                    <CreditCard className="h-8 w-8 mx-auto mb-2 text-purple-600" />
+                    <CreditCard className="h-8 w-8 mx-auto mb-2 text-orange-600" />
                     <h4 className="font-semibold">Payments</h4>
                     <p className="text-sm text-gray-600">Manage transactions</p>
                   </CardContent>
@@ -144,6 +155,18 @@ const Index = () => {
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12">Platform Features</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <Link to="/campaigns">
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer hover:scale-105 transform transition-transform">
+                <CardHeader>
+                  <Users className="h-10 w-10 text-purple-600 mb-2" />
+                  <CardTitle>Campaign Management</CardTitle>
+                  <CardDescription>
+                    Create and manage influencer marketing campaigns from start to finish
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            </Link>
+            
             <Link to="/discovery">
               <Card className="hover:shadow-lg transition-shadow cursor-pointer hover:scale-105 transform transition-transform">
                 <CardHeader>
@@ -160,9 +183,9 @@ const Index = () => {
               <Card className="hover:shadow-lg transition-shadow cursor-pointer hover:scale-105 transform transition-transform">
                 <CardHeader>
                   <Users className="h-10 w-10 text-green-600 mb-2" />
-                  <CardTitle>Campaign Management</CardTitle>
+                  <CardTitle>Analytics Dashboard</CardTitle>
                   <CardDescription>
-                    Track all your campaigns from outreach to completion with real-time updates
+                    Track all your campaigns with real-time analytics and performance metrics
                   </CardDescription>
                 </CardHeader>
               </Card>
@@ -173,23 +196,10 @@ const Index = () => {
               onClick={handleComingSoonClick}
             >
               <CardHeader>
-                <Bell className="h-10 w-10 text-purple-600 mb-2" />
+                <Bell className="h-10 w-10 text-orange-600 mb-2" />
                 <CardTitle>Smart Notifications</CardTitle>
                 <CardDescription>
                   Stay updated with real-time notifications for applications, payments, and more
-                </CardDescription>
-              </CardHeader>
-            </Card>
-            
-            <Card 
-              className="hover:shadow-lg transition-shadow cursor-pointer hover:scale-105 transform transition-transform"
-              onClick={handleComingSoonClick}
-            >
-              <CardHeader>
-                <CreditCard className="h-10 w-10 text-orange-600 mb-2" />
-                <CardTitle>Secure Payments</CardTitle>
-                <CardDescription>
-                  Process payments securely with built-in escrow and automated disbursements
                 </CardDescription>
               </CardHeader>
             </Card>

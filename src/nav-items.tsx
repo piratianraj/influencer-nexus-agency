@@ -1,5 +1,5 @@
 
-import { HomeIcon, Search, BarChart3, FileText } from "lucide-react";
+import { HomeIcon, Search, BarChart3, FileText, Users } from "lucide-react";
 
 export const navItems = [
   {
@@ -16,6 +16,11 @@ export const navItems = [
     title: "Discovery",
     to: "/discovery",
     icon: Search,
+  },
+  {
+    title: "Campaigns",
+    to: "/campaigns",
+    icon: Users,
   },
   {
     title: "Analytics",

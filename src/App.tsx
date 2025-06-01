@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Discovery from "./pages/Discovery";
 import Analytics from "./pages/Analytics";
 import BrandBrief from "./pages/BrandBrief";
+import Campaigns from "./pages/Campaigns";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,7 @@ const App = () => (
               <Route path="/brand-brief" element={<BrandBrief />} />
               <Route path="/discovery" element={<Discovery />} />
               <Route path="/analytics" element={<Analytics />} />
+              <Route path="/campaigns" element={<Campaigns />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
