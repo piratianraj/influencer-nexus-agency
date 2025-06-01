@@ -13,6 +13,7 @@ import { AdvancedFilters, FilterOptions } from '@/components/AdvancedFilters';
 interface Creator {
   id: string;
   name: string;
+  username: string;
   avatar: string;
   location: string;
   niche: string[];
@@ -30,6 +31,7 @@ const mockCreators: Creator[] = [
   {
     id: '1',
     name: 'Sarah Johnson',
+    username: '@sarahfit',
     avatar: 'https://images.unsplash.com/photo-1552058544-f9e820c93e56?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80',
     location: 'Los Angeles, CA',
     niche: ['Fitness', 'Lifestyle'],
@@ -45,6 +47,7 @@ const mockCreators: Creator[] = [
   {
     id: '2',
     name: 'Mike Williams',
+    username: '@mikeTech',
     avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd8a72f9d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80',
     location: 'New York, NY',
     niche: ['Tech', 'Gadgets'],
@@ -60,6 +63,7 @@ const mockCreators: Creator[] = [
   {
     id: '3',
     name: 'Emily Davis',
+    username: '@emilyFashion',
     avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80',
     location: 'London, UK',
     niche: ['Fashion', 'Beauty'],
@@ -75,6 +79,7 @@ const mockCreators: Creator[] = [
   {
     id: '4',
     name: 'David Brown',
+    username: '@davidTravel',
     avatar: 'https://images.unsplash.com/photo-1534528741702-a0cfae562c9c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=735&q=80',
     location: 'Sydney, AU',
     niche: ['Travel', 'Adventure'],
