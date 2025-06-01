@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +12,8 @@ import NegotiationSummary from '@/components/NegotiationSummary';
 import ContractModal from '@/components/ContractModal';
 import InvoiceModal from '@/components/InvoiceModal';
 import { AdvancedFilters, FilterOptions } from '@/components/AdvancedFilters';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface Creator {
   id: string;
@@ -40,73 +43,6 @@ interface NegotiationData {
   status: string;
 }
 
-const mockCreators: Creator[] = [
-  {
-    id: '1',
-    name: 'Sarah Johnson',
-    username: '@sarahfit',
-    avatar: 'https://images.unsplash.com/photo-1552058544-f9e820c93e56?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80',
-    location: 'Los Angeles, CA',
-    niche: ['Fitness', 'Lifestyle'],
-    platforms: ['Instagram', 'TikTok'],
-    followers: 500000,
-    engagement: 4.5,
-    rates: {
-      post: 1500,
-      story: 500,
-    },
-    verified: true,
-  },
-  {
-    id: '2',
-    name: 'Mike Williams',
-    username: '@mikeTech',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd8a72f9d?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=687&q=80',
-    location: 'New York, NY',
-    niche: ['Tech', 'Gadgets'],
-    platforms: ['YouTube', 'Twitter'],
-    followers: 750000,
-    engagement: 3.8,
-    rates: {
-      post: 2000,
-      story: 750,
-    },
-    verified: false,
-  },
-  {
-    id: '3',
-    name: 'Emily Davis',
-    username: '@emilyFashion',
-    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1470&q=80',
-    location: 'London, UK',
-    niche: ['Fashion', 'Beauty'],
-    platforms: ['Instagram', 'Blog'],
-    followers: 300000,
-    engagement: 5.2,
-    rates: {
-      post: 1200,
-      story: 400,
-    },
-    verified: true,
-  },
-  {
-    id: '4',
-    name: 'David Brown',
-    username: '@davidTravel',
-    avatar: 'https://images.unsplash.com/photo-1534528741702-a0cfae562c9c?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=735&q=80',
-    location: 'Sydney, AU',
-    niche: ['Travel', 'Adventure'],
-    platforms: ['Instagram', 'YouTube'],
-    followers: 600000,
-    engagement: 4.0,
-    rates: {
-      post: 1800,
-      story: 600,
-    },
-    verified: true,
-  },
-];
-
 const Discovery = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCreator, setSelectedCreator] = useState<Creator | null>(null);
@@ -118,6 +54,9 @@ const Discovery = () => {
   const [invoiceStatuses, setInvoiceStatuses] = useState<Record<string, "none" | "unpaid" | "paid">>({});
   const [contractModalOpen, setContractModalOpen] = useState(false);
   const [invoiceModalOpen, setInvoiceModalOpen] = useState(false);
+  const [creators, setCreators] = useState<Creator[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
   const [filters, setFilters] = useState<FilterOptions>({
     platform: [],
     followers: { min: 0, max: 0 },
@@ -127,6 +66,77 @@ const Discovery = () => {
     priceRange: { min: 0, max: 0 },
     verified: null,
   });
+
+  const generateAvatarUrl = (name: string) => {
+    const initials = name.split(' ').map(n => n[0]).join('').toUpperCase();
+    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=random&color=fff&size=96`;
+  };
+
+  const calculatePostRate = (followers: number, engagement: number) => {
+    // Simple rate calculation based on followers and engagement
+    const baseRate = Math.floor(followers / 1000) * 2;
+    const engagementMultiplier = engagement / 5;
+    return Math.max(Math.floor(baseRate * engagementMultiplier), 100);
+  };
+
+  useEffect(() => {
+    fetchCreators();
+  }, []);
+
+  const fetchCreators = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('creator database')
+        .select('*');
+
+      if (error) {
+        console.error('Error fetching creators:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch creators from database",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Transform database data to match the UI interface
+      const transformedCreators: Creator[] = data.map((creator: any) => {
+        const niches = creator.niche ? creator.niche.split(',').map((n: string) => n.trim()) : [];
+        const platforms = creator.platform ? [creator.platform] : [];
+        const followers = creator.followers || 0;
+        const engagement = creator.engagement_rate || 0;
+        
+        return {
+          id: creator.id || Math.random().toString(),
+          name: creator.name || 'Unknown Creator',
+          username: creator.handle || '@unknown',
+          avatar: generateAvatarUrl(creator.name || 'Unknown'),
+          location: creator.country || 'Unknown',
+          niche: niches,
+          platforms: platforms,
+          followers: followers,
+          engagement: engagement,
+          rates: {
+            post: calculatePostRate(followers, engagement),
+            story: Math.floor(calculatePostRate(followers, engagement) * 0.3)
+          },
+          verified: Math.random() > 0.5 // Random verification status for demo
+        };
+      });
+
+      setCreators(transformedCreators);
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const resetFilters = () => {
     setFilters({
@@ -176,7 +186,7 @@ const Discovery = () => {
     });
   };
 
-  const filteredCreators = applyFilters(mockCreators.filter(creator =>
+  const filteredCreators = applyFilters(creators.filter(creator =>
     creator.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     creator.niche.some(n => n.toLowerCase().includes(searchTerm.toLowerCase()))
   ));
@@ -210,6 +220,17 @@ const Discovery = () => {
   const handleInvoiceStatusChange = (creatorId: string, status: "unpaid" | "paid") => {
     setInvoiceStatuses(prev => ({ ...prev, [creatorId]: status }));
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading creators...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
