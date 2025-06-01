@@ -18,7 +18,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [userType, setUserType] = useState<'brand' | 'creator'>('brand');
-  const { login, signup, isLoading } = useAuth();
+  const { login, signup, loginAsGuest, isLoading } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +31,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
       onClose();
     } catch (error) {
       console.error('Auth error:', error);
+    }
+  };
+
+  const handleGuestLogin = async () => {
+    try {
+      await loginAsGuest();
+      onClose();
+    } catch (error) {
+      console.error('Guest login error:', error);
     }
   };
 
@@ -93,6 +102,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
             {isLoading ? 'Loading...' : mode === 'login' ? 'Sign In' : 'Create Account'}
           </Button>
         </form>
+        
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">Or</span>
+          </div>
+        </div>
+        
+        <Button 
+          variant="outline" 
+          className="w-full" 
+          onClick={handleGuestLogin}
+          disabled={isLoading}
+        >
+          Continue as Guest
+        </Button>
+        
         <div className="text-center">
           <button
             type="button"

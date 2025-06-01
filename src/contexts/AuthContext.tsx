@@ -10,12 +10,14 @@ export interface User {
   company?: string;
   industry?: string;
   createdAt: string;
+  isGuest?: boolean;
 }
 
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string, name: string, type: 'brand' | 'creator') => Promise<void>;
+  loginAsGuest: () => Promise<void>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -81,13 +83,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const loginAsGuest = async () => {
+    setIsLoading(true);
+    try {
+      const guestUser: User = {
+        id: 'guest-' + Date.now(),
+        email: 'guest@example.com',
+        name: 'Guest User',
+        type: 'brand',
+        company: 'Guest Company',
+        createdAt: new Date().toISOString(),
+        isGuest: true,
+      };
+      setUser(guestUser);
+      localStorage.setItem('user', JSON.stringify(guestUser));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, signup, loginAsGuest, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
