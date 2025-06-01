@@ -39,7 +39,8 @@ export const useCreatorData = () => {
   const enableRLS = async () => {
     try {
       console.log('Enabling RLS for creator database...');
-      await supabase.rpc('enable_rls_creator_database');
+      // Use any type for the RPC call to avoid TypeScript issues
+      await (supabase as any).rpc('enable_rls_creator_database');
     } catch (error) {
       console.log('RLS already enabled or error:', error);
     }
