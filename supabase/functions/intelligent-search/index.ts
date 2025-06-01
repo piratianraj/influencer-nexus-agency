@@ -16,8 +16,18 @@ serve(async (req) => {
 
   try {
     const { query } = await req.json();
-
     console.log('Processing search query:', query);
+
+    // If OpenAI key is not available, return a basic search result
+    if (!openAIApiKey) {
+      console.log('OpenAI API key not available, returning basic search');
+      return new Response(JSON.stringify({
+        searchTerm: query,
+        filters: {}
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -71,6 +81,35 @@ Set max to 0 to indicate no upper limit. Only include filters that are explicitl
     const data = await response.json();
     console.log('OpenAI response:', data);
 
+    // Handle API errors (like quota exceeded)
+    if (data.error) {
+      console.log('OpenAI API error:', data.error.message);
+      
+      // Fallback to basic text search
+      const basicResult = {
+        searchTerm: query,
+        filters: {}
+      };
+      
+      return new Response(JSON.stringify(basicResult), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Handle missing choices
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      console.log('Invalid OpenAI response structure');
+      
+      const basicResult = {
+        searchTerm: query,
+        filters: {}
+      };
+      
+      return new Response(JSON.stringify(basicResult), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const searchParams = JSON.parse(data.choices[0].message.content);
     console.log('Parsed search parameters:', searchParams);
 
@@ -79,12 +118,15 @@ Set max to 0 to indicate no upper limit. Only include filters that are explicitl
     });
   } catch (error) {
     console.error('Error in intelligent-search function:', error);
-    return new Response(JSON.stringify({ 
-      error: error.message,
-      searchTerm: "",
+    
+    // Return basic search as fallback
+    const { query } = await req.json().catch(() => ({ query: '' }));
+    const fallbackResult = {
+      searchTerm: query || '',
       filters: {}
-    }), {
-      status: 500,
+    };
+    
+    return new Response(JSON.stringify(fallbackResult), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }

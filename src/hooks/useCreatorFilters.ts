@@ -63,17 +63,21 @@ export const useCreatorFilters = () => {
       return creators;
     }
     
+    const searchLower = searchTerm.toLowerCase();
     const filtered = creators.filter(creator => {
-      const searchLower = searchTerm.toLowerCase();
+      // More forgiving search - includes partial matches
       const nameMatch = creator.name.toLowerCase().includes(searchLower);
       const nicheMatch = creator.niche.some(n => n.toLowerCase().includes(searchLower));
       const usernameMatch = creator.username.toLowerCase().includes(searchLower);
       const locationMatch = creator.location.toLowerCase().includes(searchLower);
       
-      return nameMatch || nicheMatch || usernameMatch || locationMatch;
+      // Also search in platforms
+      const platformMatch = creator.platforms.some(p => p.toLowerCase().includes(searchLower));
+      
+      return nameMatch || nicheMatch || usernameMatch || locationMatch || platformMatch;
     });
     
-    console.log('Search term:', searchTerm, 'filtered creators:', filtered.length);
+    console.log('Search term:', searchTerm, 'filtered creators:', filtered.length, 'from total:', creators.length);
     return filtered;
   };
 

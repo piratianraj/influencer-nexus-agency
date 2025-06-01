@@ -28,24 +28,26 @@ export const useIntelligentSearch = () => {
 
       if (error) {
         console.error('Search error:', error);
-        toast({
-          title: "Search Error",
-          description: "Failed to process your search query. Please try again.",
-          variant: "destructive"
-        });
-        return null;
+        
+        // Fallback to basic text search
+        console.log('Falling back to basic text search');
+        return {
+          searchTerm: query,
+          filters: {}
+        };
       }
 
       console.log('Search result:', data);
       return data as SearchResult;
     } catch (error) {
       console.error('Unexpected search error:', error);
-      toast({
-        title: "Search Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive"
-      });
-      return null;
+      
+      // Fallback to basic text search
+      console.log('Falling back to basic text search due to error');
+      return {
+        searchTerm: query,
+        filters: {}
+      };
     } finally {
       setIsSearching(false);
     }
