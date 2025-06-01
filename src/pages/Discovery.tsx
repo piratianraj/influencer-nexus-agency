@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Plus, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -15,6 +14,8 @@ import { useCreatorFilters } from '@/hooks/useCreatorFilters';
 import { useDiscoveryState } from '@/hooks/useDiscoveryState';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Header } from '@/components/Header';
 
 const Discovery = () => {
   const navigate = useNavigate();
@@ -34,7 +35,7 @@ const Discovery = () => {
   const briefData = location.state;
   const [selectedCreators, setSelectedCreators] = useState<string[]>([]);
 
-  const { creators, loading } = useCreatorData();
+  const { creators, loading, refetch, page, setPage, pageSize } = useCreatorData();
   const { applyFilters, applySearch } = useCreatorFilters();
   const {
     state,
@@ -139,13 +140,23 @@ const Discovery = () => {
   console.log('Total creators:', creators.length, 'After search:', searchedCreators.length, 'After filters:', filteredCreators.length);
 
   if (loading) {
-    return <LoadingSpinner />;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50">
+        <Header />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[...Array(pageSize)].map((_, i) => (
+              <Skeleton key={i} className="h-64 w-full mb-4" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50">
-      <DiscoveryHeader />
-
+      <Header />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <Button 
@@ -230,6 +241,17 @@ const Discovery = () => {
             onClearFilters={resetFilters}
             onCreatorSelect={handleCreatorSelect}
           />
+        </div>
+
+        {/* Pagination Controls */}
+        <div className="flex justify-center gap-4 mt-8">
+          <Button onClick={() => setPage(page - 1)} disabled={page === 1} variant="outline">
+            Previous
+          </Button>
+          <span className="self-center">Page {page}</span>
+          <Button onClick={() => setPage(page + 1)} variant="outline">
+            Next
+          </Button>
         </div>
 
         {/* Bottom Action Bar */}

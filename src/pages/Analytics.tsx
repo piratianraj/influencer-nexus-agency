@@ -1,10 +1,12 @@
-
+import React from 'react';
+import { Header } from '@/components/Header';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { Download, TrendingUp, Users, DollarSign, Eye, Heart, Share } from "lucide-react";
 
@@ -180,227 +182,242 @@ ${creatorPerformance.map(creator =>
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Campaign Analytics</h1>
-          <div className="flex space-x-3">
-            <Button variant="outline" onClick={() => navigate('/discovery')}>
-              Back to Discovery
-            </Button>
-            <Button onClick={handleExportReport}>
-              <Download className="w-4 h-4 mr-2" />
-              Export Report
-            </Button>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50">
+      <Header />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-8">
+          <Button
+            variant="ghost"
+            onClick={() => navigate(-1)}
+            className="mb-4 flex items-center gap-2 hover:bg-white/50 rounded-xl"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          <h1 className="text-3xl font-bold text-gray-900">Analytics</h1>
+          <p className="text-gray-600 mt-2">View insights and performance metrics for your campaigns</p>
+        </div>
+        <div className="max-w-6xl mx-auto">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-3xl font-bold">Campaign Analytics</h1>
+            <div className="flex space-x-3">
+              <Button variant="outline" onClick={() => navigate('/discovery')}>
+                Back to Discovery
+              </Button>
+              <Button onClick={handleExportReport}>
+                <Download className="w-4 h-4 mr-2" />
+                Export Report
+              </Button>
+            </div>
           </div>
-        </div>
 
-        {/* Campaign Summary */}
-        {brief && (
-          <Card className="mb-6">
+          {/* Campaign Summary */}
+          {brief && (
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>Campaign Overview</CardTitle>
+                <CardDescription>{brief.brand_name} - {brief.niche} Campaign</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div><strong>Budget:</strong> ₹{brief.budget.toLocaleString()}</div>
+                  <div><strong>Timeline:</strong> {brief.timeline}</div>
+                  <div><strong>Target Creators:</strong> {brief.num_creators}</div>
+                  <div><strong>Platforms:</strong> {brief.platforms.join(", ")}</div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Key Metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">₹{metrics?.totalSpent.toLocaleString()}</div>
+                <p className="text-xs text-muted-foreground">
+                  {brief && `${((metrics?.totalSpent || 0) / brief.budget * 100).toFixed(1)}% of budget`}
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Reach</CardTitle>
+                <Eye className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{metrics?.totalReach.toLocaleString()}</div>
+                <p className="text-xs text-muted-foreground">
+                  Unique users reached
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Engagements</CardTitle>
+                <Heart className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{metrics?.totalEngagements.toLocaleString()}</div>
+                <p className="text-xs text-muted-foreground">
+                  {metrics?.averageEngagementRate}% avg rate
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">ROI</CardTitle>
+                <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{metrics?.roi}x</div>
+                <p className="text-xs text-muted-foreground">
+                  Return on investment
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Charts Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            {/* Platform Performance */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Platform Performance</CardTitle>
+                <CardDescription>Reach by platform</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={platformData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ platform, reach }) => `${platform}: ${reach.toLocaleString()}`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="reach"
+                    >
+                      {platformData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Creator Performance Bar Chart */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Creator Performance</CardTitle>
+                <CardDescription>Engagement rate by creator</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={creatorPerformance}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="username" angle={-45} textAnchor="end" height={80} />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="engagementRate" fill="#8884d8" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Creator Performance Table */}
+          <Card>
             <CardHeader>
-              <CardTitle>Campaign Overview</CardTitle>
-              <CardDescription>{brief.brand_name} - {brief.niche} Campaign</CardDescription>
+              <CardTitle>Detailed Creator Performance</CardTitle>
+              <CardDescription>Individual creator metrics and status</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div><strong>Budget:</strong> ₹{brief.budget.toLocaleString()}</div>
-                <div><strong>Timeline:</strong> {brief.timeline}</div>
-                <div><strong>Target Creators:</strong> {brief.num_creators}</div>
-                <div><strong>Platforms:</strong> {brief.platforms.join(", ")}</div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Key Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">₹{metrics?.totalSpent.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">
-                {brief && `${((metrics?.totalSpent || 0) / brief.budget * 100).toFixed(1)}% of budget`}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Reach</CardTitle>
-              <Eye className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{metrics?.totalReach.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">
-                Unique users reached
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Engagements</CardTitle>
-              <Heart className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{metrics?.totalEngagements.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">
-                {metrics?.averageEngagementRate}% avg rate
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">ROI</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{metrics?.roi}x</div>
-              <p className="text-xs text-muted-foreground">
-                Return on investment
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Platform Performance */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Platform Performance</CardTitle>
-              <CardDescription>Reach by platform</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={platformData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ platform, reach }) => `${platform}: ${reach.toLocaleString()}`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="reach"
-                  >
-                    {platformData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Creator Performance Bar Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Creator Performance</CardTitle>
-              <CardDescription>Engagement rate by creator</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={creatorPerformance}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="username" angle={-45} textAnchor="end" height={80} />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="engagementRate" fill="#8884d8" />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Creator Performance Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Detailed Creator Performance</CardTitle>
-            <CardDescription>Individual creator metrics and status</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-2">Creator</th>
-                    <th className="text-left p-2">Platform</th>
-                    <th className="text-left p-2">Spent</th>
-                    <th className="text-left p-2">Reach</th>
-                    <th className="text-left p-2">Engagements</th>
-                    <th className="text-left p-2">Rate</th>
-                    <th className="text-left p-2">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {creatorPerformance.map((creator) => (
-                    <tr key={creator.id} className="border-b">
-                      <td className="p-2">
-                        <div>
-                          <div className="font-medium">{creator.name}</div>
-                          <div className="text-gray-500">{creator.username}</div>
-                        </div>
-                      </td>
-                      <td className="p-2">
-                        <Badge variant={creator.platform === "Instagram" ? "default" : "secondary"}>
-                          {creator.platform}
-                        </Badge>
-                      </td>
-                      <td className="p-2">₹{creator.spent.toLocaleString()}</td>
-                      <td className="p-2">{creator.reach.toLocaleString()}</td>
-                      <td className="p-2">{creator.engagements.toLocaleString()}</td>
-                      <td className="p-2">{creator.engagementRate}%</td>
-                      <td className="p-2">
-                        <Badge variant={
-                          creator.status === "completed" ? "default" : 
-                          creator.status === "in-progress" ? "secondary" : "outline"
-                        }>
-                          {creator.status}
-                        </Badge>
-                      </td>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-2">Creator</th>
+                      <th className="text-left p-2">Platform</th>
+                      <th className="text-left p-2">Spent</th>
+                      <th className="text-left p-2">Reach</th>
+                      <th className="text-left p-2">Engagements</th>
+                      <th className="text-left p-2">Rate</th>
+                      <th className="text-left p-2">Status</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+                  </thead>
+                  <tbody>
+                    {creatorPerformance.map((creator) => (
+                      <tr key={creator.id} className="border-b">
+                        <td className="p-2">
+                          <div>
+                            <div className="font-medium">{creator.name}</div>
+                            <div className="text-gray-500">{creator.username}</div>
+                          </div>
+                        </td>
+                        <td className="p-2">
+                          <Badge variant={creator.platform === "Instagram" ? "default" : "secondary"}>
+                            {creator.platform}
+                          </Badge>
+                        </td>
+                        <td className="p-2">₹{creator.spent.toLocaleString()}</td>
+                        <td className="p-2">{creator.reach.toLocaleString()}</td>
+                        <td className="p-2">{creator.engagements.toLocaleString()}</td>
+                        <td className="p-2">{creator.engagementRate}%</td>
+                        <td className="p-2">
+                          <Badge variant={
+                            creator.status === "completed" ? "default" : 
+                            creator.status === "in-progress" ? "secondary" : "outline"
+                          }>
+                            {creator.status}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* Campaign Status Summary */}
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Campaign Status</CardTitle>
-            <CardDescription>Overall progress and pipeline status</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{metrics?.creatorsContacted}</div>
-                <div className="text-sm text-gray-500">Creators Contacted</div>
+          {/* Campaign Status Summary */}
+          <Card className="mt-6">
+            <CardHeader>
+              <CardTitle>Campaign Status</CardTitle>
+              <CardDescription>Overall progress and pipeline status</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-blue-600">{metrics?.creatorsContacted}</div>
+                  <div className="text-sm text-gray-500">Creators Contacted</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">{metrics?.creatorsSignedUp}</div>
+                  <div className="text-sm text-gray-500">Signed Up</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-purple-600">{metrics?.contractsSigned}</div>
+                  <div className="text-sm text-gray-500">Contracts Signed</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-orange-600">{metrics?.invoicesPaid}</div>
+                  <div className="text-sm text-gray-500">Invoices Paid</div>
+                </div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{metrics?.creatorsSignedUp}</div>
-                <div className="text-sm text-gray-500">Signed Up</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">{metrics?.contractsSigned}</div>
-                <div className="text-sm text-gray-500">Contracts Signed</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600">{metrics?.invoicesPaid}</div>
-                <div className="text-sm text-gray-500">Invoices Paid</div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

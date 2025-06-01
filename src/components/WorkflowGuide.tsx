@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,11 +19,13 @@ interface WorkflowStep {
 interface WorkflowGuideProps {
   currentStep?: string;
   onStepClick?: (stepId: string) => void;
+  onEdit?: () => void;
 }
 
 export const WorkflowGuide: React.FC<WorkflowGuideProps> = ({ 
   currentStep = 'campaign-creation',
-  onStepClick 
+  onStepClick,
+  onEdit
 }) => {
   const [expandedStep, setExpandedStep] = useState<string | null>(null);
 
@@ -36,7 +37,7 @@ export const WorkflowGuide: React.FC<WorkflowGuideProps> = ({
       icon: <Plus className="h-5 w-5" />,
       status: currentStep === 'campaign-creation' ? 'current' : 'completed',
       route: '/campaigns',
-      action: 'Create Campaign'
+      action: currentStep === 'campaign-creation' ? 'Edit Campaign' : 'Create Campaign'
     },
     {
       id: 'creator-search',
@@ -157,11 +158,17 @@ export const WorkflowGuide: React.FC<WorkflowGuideProps> = ({
                     {step.status}
                   </Badge>
                   {step.status !== 'pending' && step.route && (
-                    <Link to={step.route}>
-                      <Button size="sm" variant="outline">
+                    step.action === 'Edit Campaign' && onEdit ? (
+                      <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
                         {step.action}
                       </Button>
-                    </Link>
+                    ) : (
+                      <Link to={step.route} onClick={e => e.stopPropagation()}>
+                        <Button size="sm" variant="outline">
+                          {step.action}
+                        </Button>
+                      </Link>
+                    )
                   )}
                 </div>
               </div>

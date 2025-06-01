@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Plus, Users, TrendingUp, DollarSign, Calendar, CheckCircle, ArrowLeft } from 'lucide-react';
+import { Plus, Users, TrendingUp, DollarSign, Calendar, CheckCircle, ArrowLeft, ArrowLeft as LucideArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthModal } from '@/components/AuthModal';
 import { CampaignDetails } from '@/components/CampaignDetails';
@@ -108,6 +107,7 @@ const Campaigns = () => {
   const [showWorkflowGuide, setShowWorkflowGuide] = useState(false);
   const [campaigns, setCampaigns] = useState<Campaign[]>(mockCampaigns);
   const [showNewCampaignSuccess, setShowNewCampaignSuccess] = useState(false);
+  const [showEditCampaign, setShowEditCampaign] = useState(false);
 
   // Handle URL query parameter for creating campaign
   useEffect(() => {
@@ -207,6 +207,22 @@ const Campaigns = () => {
     });
   };
 
+  const handleEditCampaign = (campaign: Campaign) => {
+    setSelectedCampaign(campaign);
+    setShowEditCampaign(true);
+  };
+
+  const handleUpdateCampaign = (updatedCampaign: Omit<Campaign, 'id'>) => {
+    if (!selectedCampaign) return;
+    setCampaigns(campaigns.map(c => c.id === selectedCampaign.id ? { ...selectedCampaign, ...updatedCampaign } : c));
+    setShowEditCampaign(false);
+    setSelectedCampaign(null);
+    toast({
+      title: 'Campaign Updated',
+      description: 'Your campaign has been updated successfully!'
+    });
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -243,6 +259,19 @@ const Campaigns = () => {
     );
   }
 
+  if (selectedCampaign && showEditCampaign) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <CreateCampaign
+          onBack={() => setShowEditCampaign(false)}
+          onSubmit={handleUpdateCampaign}
+          prefilledData={selectedCampaign}
+        />
+      </div>
+    );
+  }
+
   if (selectedCampaign) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -251,6 +280,7 @@ const Campaigns = () => {
           campaign={selectedCampaign} 
           onBack={() => setSelectedCampaign(null)}
           onViewReport={() => setShowReport(true)}
+          onEdit={() => handleEditCampaign(selectedCampaign)}
         />
       </div>
     );
@@ -288,30 +318,28 @@ const Campaigns = () => {
     <div className="min-h-screen bg-gray-50">
       <Header />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8 flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">My Campaigns</h1>
-            <p className="text-gray-600 mt-2">Manage your influencer marketing campaigns</p>
-          </div>
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => setShowWorkflowGuide(!showWorkflowGuide)}
-            >
-              Workflow Guide
-            </Button>
-            <Button onClick={() => setShowCreateCampaign(true)} className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              New Campaign
-            </Button>
+        <div className="mb-8">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate(-1)}
+            className="mb-4 flex items-center gap-2 hover:bg-white/50 rounded-xl"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">My Campaigns</h1>
+              <p className="text-gray-600 mt-2">Manage your influencer marketing campaigns</p>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={() => setShowCreateCampaign(true)} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                New Campaign
+              </Button>
+            </div>
           </div>
         </div>
-
-        {showWorkflowGuide && (
-          <div className="mb-8">
-            <WorkflowGuide />
-          </div>
-        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {campaigns.map((campaign) => (

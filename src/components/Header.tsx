@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -20,19 +19,20 @@ export const Header = () => {
     <>
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
+          <div className="flex justify-between items-center h-16 relative">
+            {/* Left: Logo */}
+            <div className="flex items-center space-x-4 flex-shrink-0">
               <h1 className="text-2xl font-bold text-gray-900">InfluencerHub</h1>
             </div>
-            
-            <nav className="hidden md:flex space-x-8">
+            {/* Center: Navigation */}
+            <nav className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 flex space-x-8">
               <Link to="/" className="text-gray-700 hover:text-blue-600 font-medium">Home</Link>
               <Link to="/campaigns" className="text-gray-700 hover:text-blue-600 font-medium">Campaigns</Link>
               <Link to="/discovery" className="text-gray-700 hover:text-blue-600 font-medium">Discovery</Link>
               <Link to="/analytics" className="text-gray-700 hover:text-blue-600 font-medium">Analytics</Link>
             </nav>
-
-            <div className="flex items-center space-x-4">
+            {/* Right: User actions */}
+            <div className="flex items-center space-x-4 flex-shrink-0">
               {user ? (
                 <>
                   <NotificationDropdown />
