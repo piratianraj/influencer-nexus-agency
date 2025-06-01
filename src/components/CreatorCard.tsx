@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Mail, Phone } from 'lucide-react';
+import { Mail, Phone, CheckCircle, Circle } from 'lucide-react';
 
 interface Creator {
   id: string;
@@ -21,17 +21,38 @@ interface Creator {
     story: number;
   };
   verified: boolean;
+  isSelected?: boolean;
 }
 
 interface CreatorCardProps {
   creator: Creator;
   hasNegotiation: boolean;
   onOutreach: (creator: Creator, type: "email" | "call") => void;
+  onCreatorSelect?: (creatorId: string) => void;
 }
 
-const CreatorCard = ({ creator, hasNegotiation, onOutreach }: CreatorCardProps) => {
+const CreatorCard = ({ creator, hasNegotiation, onOutreach, onCreatorSelect }: CreatorCardProps) => {
+  const handleCardClick = () => {
+    if (onCreatorSelect) {
+      onCreatorSelect(creator.id);
+    }
+  };
+
   return (
-    <Card className="hover:shadow-lg transition-shadow">
+    <Card className={`hover:shadow-lg transition-shadow relative ${creator.isSelected ? 'ring-2 ring-blue-500' : ''}`}>
+      {onCreatorSelect && (
+        <div 
+          className="absolute top-3 right-3 cursor-pointer z-10" 
+          onClick={handleCardClick}
+        >
+          {creator.isSelected ? (
+            <CheckCircle className="h-6 w-6 text-blue-600 bg-white rounded-full" />
+          ) : (
+            <Circle className="h-6 w-6 text-gray-400 hover:text-blue-600 bg-white rounded-full" />
+          )}
+        </div>
+      )}
+      
       <CardHeader className="pb-3">
         <div className="flex items-center space-x-3">
           <Avatar className="h-12 w-12">
@@ -78,7 +99,10 @@ const CreatorCard = ({ creator, hasNegotiation, onOutreach }: CreatorCardProps) 
         {!hasNegotiation && (
           <div className="flex gap-2">
             <Button 
-              onClick={() => onOutreach(creator, "email")} 
+              onClick={(e) => {
+                e.stopPropagation();
+                onOutreach(creator, "email");
+              }} 
               className="flex-1"
               size="sm"
             >
@@ -86,7 +110,10 @@ const CreatorCard = ({ creator, hasNegotiation, onOutreach }: CreatorCardProps) 
               Email
             </Button>
             <Button 
-              onClick={() => onOutreach(creator, "call")} 
+              onClick={(e) => {
+                e.stopPropagation();
+                onOutreach(creator, "call");
+              }} 
               variant="outline"
               className="flex-1"
               size="sm"

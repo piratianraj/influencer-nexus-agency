@@ -18,6 +18,7 @@ interface Creator {
     story: number;
   };
   verified: boolean;
+  isSelected?: boolean;
 }
 
 interface NegotiationData {
@@ -39,6 +40,7 @@ interface CreatorGridProps {
   onOutreach: (creator: Creator, type: "email" | "call") => void;
   onOpenContract: (creator: Creator) => void;
   onOpenInvoice: (creator: Creator) => void;
+  onCreatorSelect?: (creatorId: string) => void;
 }
 
 const CreatorGrid = ({ 
@@ -48,7 +50,8 @@ const CreatorGrid = ({
   invoiceStatuses, 
   onOutreach, 
   onOpenContract, 
-  onOpenInvoice 
+  onOpenInvoice,
+  onCreatorSelect
 }: CreatorGridProps) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -58,6 +61,7 @@ const CreatorGrid = ({
             creator={creator}
             hasNegotiation={!!negotiations[creator.id]}
             onOutreach={onOutreach}
+            onCreatorSelect={onCreatorSelect}
           />
 
           {negotiations[creator.id] && (
