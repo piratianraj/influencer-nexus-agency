@@ -14,6 +14,7 @@ interface DiscoveryContentProps {
   onOpenContract: (creator: Creator) => void;
   onOpenInvoice: (creator: Creator) => void;
   onClearFilters: () => void;
+  onCreatorSelect?: (creatorId: string) => void;
 }
 
 const DiscoveryContent = ({
@@ -24,7 +25,8 @@ const DiscoveryContent = ({
   onOutreach,
   onOpenContract,
   onOpenInvoice,
-  onClearFilters
+  onClearFilters,
+  onCreatorSelect
 }: DiscoveryContentProps) => {
   return (
     <div className="flex-1">
@@ -45,6 +47,7 @@ const DiscoveryContent = ({
           onOutreach={onOutreach}
           onOpenContract={onOpenContract}
           onOpenInvoice={onOpenInvoice}
+          onCreatorSelect={onCreatorSelect}
         />
       )}
     </div>

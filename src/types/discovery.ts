@@ -1,4 +1,3 @@
-
 export interface Creator {
   id: string;
   name: string;
@@ -14,6 +13,7 @@ export interface Creator {
     story: number;
   };
   verified: boolean;
+  isSelected?: boolean;
 }
 
 export interface NegotiationData {

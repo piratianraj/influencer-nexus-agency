@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,9 +24,10 @@ interface Campaign {
 interface CreateCampaignProps {
   onBack: () => void;
   onSubmit: (campaign: Omit<Campaign, 'id'>) => void;
+  prefilledData?: any;
 }
 
-export const CreateCampaign: React.FC<CreateCampaignProps> = ({ onBack, onSubmit }) => {
+export const CreateCampaign: React.FC<CreateCampaignProps> = ({ onBack, onSubmit, prefilledData }) => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
