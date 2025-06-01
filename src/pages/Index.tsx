@@ -12,12 +12,21 @@ import { AuthModal } from '@/components/AuthModal';
 import { UserProfile } from '@/components/UserProfile';
 import { NotificationDropdown } from '@/components/NotificationDropdown';
 import { PaymentSetup } from '@/components/PaymentSetup';
+import { useToast } from '@/hooks/use-toast';
 
 const Index = () => {
   const { user, logout } = useAuth();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const { toast } = useToast();
+
+  const handleComingSoonClick = () => {
+    toast({
+      title: "Coming Soon",
+      description: "This feature is currently under development and will be available soon!",
+    });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -135,27 +144,34 @@ const Index = () => {
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12">Platform Features</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <Card>
-              <CardHeader>
-                <Search className="h-10 w-10 text-blue-600 mb-2" />
-                <CardTitle>Advanced Search</CardTitle>
-                <CardDescription>
-                  Find creators with detailed filters for platform, followers, engagement, and more
-                </CardDescription>
-              </CardHeader>
-            </Card>
+            <Link to="/discovery">
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer hover:scale-105 transform transition-transform">
+                <CardHeader>
+                  <Search className="h-10 w-10 text-blue-600 mb-2" />
+                  <CardTitle>Advanced Search</CardTitle>
+                  <CardDescription>
+                    Find creators with detailed filters for platform, followers, engagement, and more
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            </Link>
             
-            <Card>
-              <CardHeader>
-                <Users className="h-10 w-10 text-green-600 mb-2" />
-                <CardTitle>Campaign Management</CardTitle>
-                <CardDescription>
-                  Track all your campaigns from outreach to completion with real-time updates
-                </CardDescription>
-              </CardHeader>
-            </Card>
+            <Link to="/analytics">
+              <Card className="hover:shadow-lg transition-shadow cursor-pointer hover:scale-105 transform transition-transform">
+                <CardHeader>
+                  <Users className="h-10 w-10 text-green-600 mb-2" />
+                  <CardTitle>Campaign Management</CardTitle>
+                  <CardDescription>
+                    Track all your campaigns from outreach to completion with real-time updates
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            </Link>
             
-            <Card>
+            <Card 
+              className="hover:shadow-lg transition-shadow cursor-pointer hover:scale-105 transform transition-transform"
+              onClick={handleComingSoonClick}
+            >
               <CardHeader>
                 <Bell className="h-10 w-10 text-purple-600 mb-2" />
                 <CardTitle>Smart Notifications</CardTitle>
@@ -165,7 +181,10 @@ const Index = () => {
               </CardHeader>
             </Card>
             
-            <Card>
+            <Card 
+              className="hover:shadow-lg transition-shadow cursor-pointer hover:scale-105 transform transition-transform"
+              onClick={handleComingSoonClick}
+            >
               <CardHeader>
                 <CreditCard className="h-10 w-10 text-orange-600 mb-2" />
                 <CardTitle>Secure Payments</CardTitle>
