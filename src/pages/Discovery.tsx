@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import OutreachModal from '@/components/OutreachModal';
 import ContractModal from '@/components/ContractModal';
@@ -77,6 +76,19 @@ const Discovery = () => {
     });
   };
 
+  const handleIntelligentSearch = (searchTerm: string, intelligentFilters: Partial<FilterOptions>) => {
+    console.log('Applying intelligent search:', { searchTerm, intelligentFilters });
+    
+    // Update search term
+    setSearchTerm(searchTerm);
+    
+    // Update filters with intelligent results
+    setFilters(prevFilters => ({
+      ...prevFilters,
+      ...intelligentFilters
+    }));
+  };
+
   const filteredCreators = applyFilters(applySearch(creators, searchTerm), filters);
 
   const handleOutreach = (creator: Creator, type: "email" | "call") => {
@@ -126,6 +138,7 @@ const Discovery = () => {
             onSearchChange={setSearchTerm}
             showFilters={showFilters}
             onToggleFilters={() => setShowFilters(!showFilters)}
+            onIntelligentSearch={handleIntelligentSearch}
           />
 
           <ActiveFilters filters={filters} onUpdateFilters={setFilters} />
