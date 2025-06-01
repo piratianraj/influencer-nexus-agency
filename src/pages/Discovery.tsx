@@ -528,6 +528,7 @@ const Discovery = () => {
           onClose={handleCloseOutreach}
           creator={outreachModal.creator}
           type={outreachModal.type}
+          onNegotiationComplete={handleNegotiationComplete}
         />
       )}
     </div>
