@@ -351,9 +351,14 @@ const Discovery = () => {
         {/* Results Header */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Recommended Creators ({creators.length})</h1>
-          <Button variant="outline" onClick={() => navigate('/')}>
-            New Brief
-          </Button>
+          <div className="flex space-x-3">
+            <Button variant="outline" onClick={() => navigate('/analytics')}>
+              View Analytics
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/')}>
+              New Brief
+            </Button>
+          </div>
         </div>
 
         {/* Creator Grid */}
