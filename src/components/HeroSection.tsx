@@ -62,14 +62,14 @@ export const HeroSection = () => {
                 </Button>
               </div>
 
-              {/* Secondary options */}
+              {/* Sign in/Sign up buttons */}
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button 
                   size="lg" 
                   onClick={() => setAuthModalOpen(true)}
                   className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold px-8 py-4 rounded-full text-lg shadow-lg hover:shadow-xl transition-all duration-300"
                 >
-                  Subscribe Now
+                  Sign Up
                 </Button>
                 <Button 
                   variant="outline" 
