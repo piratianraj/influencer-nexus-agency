@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Search, Filter, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { OutreachModal } from '@/components/OutreachModal';
+import OutreachModal from '@/components/OutreachModal';
 import { AdvancedFilters, FilterOptions } from '@/components/AdvancedFilters';
 
 interface Creator {
