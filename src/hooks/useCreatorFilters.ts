@@ -20,6 +20,8 @@ interface Creator {
 
 export const useCreatorFilters = () => {
   const applyFilters = (creators: Creator[], filters: FilterOptions) => {
+    console.log('Applying filters:', filters, 'to creators:', creators.length);
+    
     return creators.filter(creator => {
       // Platform filter
       if (filters.platform.length > 0 && !filters.platform.some(p => creator.platforms.includes(p))) {
@@ -56,10 +58,23 @@ export const useCreatorFilters = () => {
   };
 
   const applySearch = (creators: Creator[], searchTerm: string) => {
-    return creators.filter(creator =>
-      creator.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      creator.niche.some(n => n.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    if (!searchTerm.trim()) {
+      console.log('No search term, returning all creators:', creators.length);
+      return creators;
+    }
+    
+    const filtered = creators.filter(creator => {
+      const searchLower = searchTerm.toLowerCase();
+      const nameMatch = creator.name.toLowerCase().includes(searchLower);
+      const nicheMatch = creator.niche.some(n => n.toLowerCase().includes(searchLower));
+      const usernameMatch = creator.username.toLowerCase().includes(searchLower);
+      const locationMatch = creator.location.toLowerCase().includes(searchLower);
+      
+      return nameMatch || nicheMatch || usernameMatch || locationMatch;
+    });
+    
+    console.log('Search term:', searchTerm, 'filtered creators:', filtered.length);
+    return filtered;
   };
 
   return { applyFilters, applySearch };

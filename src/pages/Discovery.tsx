@@ -43,6 +43,7 @@ const Discovery = () => {
   } = useDiscoveryState();
 
   const resetFilters = () => {
+    console.log('Resetting filters');
     setFilters({
       platform: [],
       followers: { min: 0, max: 0 },
@@ -52,6 +53,7 @@ const Discovery = () => {
       priceRange: { min: 0, max: 0 },
       verified: null,
     });
+    updateState({ searchTerm: '' });
   };
 
   const handleIntelligentSearch = (searchTerm: string, intelligentFilters: Partial<FilterOptions>) => {
@@ -64,7 +66,11 @@ const Discovery = () => {
     }));
   };
 
-  const filteredCreators = applyFilters(applySearch(creators, state.searchTerm), filters);
+  // Apply search first, then filters
+  const searchedCreators = applySearch(creators, state.searchTerm);
+  const filteredCreators = applyFilters(searchedCreators, filters);
+
+  console.log('Total creators:', creators.length, 'After search:', searchedCreators.length, 'After filters:', filteredCreators.length);
 
   if (loading) {
     return <LoadingSpinner />;

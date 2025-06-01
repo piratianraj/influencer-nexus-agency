@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Filter, Brain, Loader2 } from 'lucide-react';
+import { Filter, Brain, Loader2 } from 'lucide-react';
 import { useIntelligentSearch } from '@/hooks/useIntelligentSearch';
 import { FilterOptions } from '@/components/AdvancedFilters';
 
@@ -27,9 +27,13 @@ const SearchAndFilters = ({
   const handleAiSearch = async () => {
     if (!aiQuery.trim()) return;
     
+    console.log('Performing AI search with query:', aiQuery);
     const result = await performIntelligentSearch(aiQuery);
     if (result) {
+      console.log('AI search result:', result);
       onIntelligentSearch(result.searchTerm, result.filters);
+      // Also update the current search term for immediate filtering
+      onSearchChange(result.searchTerm);
       setAiQuery('');
     }
   };
@@ -40,55 +44,48 @@ const SearchAndFilters = ({
     }
   };
 
+  const handleDirectSearch = (value: string) => {
+    setAiQuery(value);
+    onSearchChange(value);
+  };
+
   return (
     <div className="flex flex-col gap-4">
-      {/* Regular Search */}
-      <div className="flex flex-col lg:flex-row gap-4">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-          <Input
-            type="text"
-            placeholder="Search creators by name or niche..."
-            value={searchTerm}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <Button 
-          variant="outline" 
-          onClick={onToggleFilters}
-          className="lg:w-auto w-full"
-        >
-          <Filter className="h-4 w-4 mr-2" />
-          {showFilters ? 'Hide Filters' : 'Show Filters'}
-        </Button>
-      </div>
-
-      {/* AI-Powered Search */}
-      <div className="flex flex-col lg:flex-row gap-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+      {/* Single AI-Powered Search */}
+      <div className="flex flex-col lg:flex-row gap-4 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border border-blue-200/50">
         <div className="flex-1 relative">
           <Brain className="absolute left-3 top-1/2 transform -translate-y-1/2 text-blue-500 h-5 w-5" />
           <Input
             type="text"
-            placeholder="Try: 'fitness creators with high engagement' or 'verified tech YouTubers from US'"
+            placeholder="Try: 'fitness creators with high engagement' or 'verified tech YouTubers from US' or just 'fitness'"
             value={aiQuery}
-            onChange={(e) => setAiQuery(e.target.value)}
+            onChange={(e) => handleDirectSearch(e.target.value)}
             onKeyPress={handleKeyPress}
-            className="pl-10 border-blue-300 focus:border-blue-500"
+            className="pl-10 border-blue-300 focus:border-blue-500 bg-white/80 backdrop-blur-sm"
           />
         </div>
-        <Button 
-          onClick={handleAiSearch}
-          disabled={isSearching || !aiQuery.trim()}
-          className="lg:w-auto w-full bg-blue-600 hover:bg-blue-700"
-        >
-          {isSearching ? (
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-          ) : (
-            <Brain className="h-4 w-4 mr-2" />
-          )}
-          AI Search
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleAiSearch}
+            disabled={isSearching || !aiQuery.trim()}
+            className="lg:w-auto w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+          >
+            {isSearching ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Brain className="h-4 w-4 mr-2" />
+            )}
+            AI Search
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={onToggleFilters}
+            className="lg:w-auto w-full bg-white/80 backdrop-blur-sm hover:bg-white"
+          >
+            <Filter className="h-4 w-4 mr-2" />
+            {showFilters ? 'Hide Filters' : 'Filters'}
+          </Button>
+        </div>
       </div>
     </div>
   );
