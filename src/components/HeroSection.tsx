@@ -14,13 +14,8 @@ export const HeroSection = () => {
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
 
   const handleCreateCampaign = () => {
-    if (user) {
-      // For authenticated users, check if they have campaigns
-      navigate('/brand-brief');
-    } else {
-      // For guests, go directly to brand brief
-      navigate('/brand-brief');
-    }
+    // Always go to campaigns page for campaign creation
+    navigate('/campaigns?create=true');
   };
 
   const handleSignUp = () => {

@@ -15,7 +15,7 @@ export const UserDashboard = () => {
   if (!user) return null;
 
   const handleCreateCampaign = () => {
-    navigate('/brand-brief');
+    navigate('/campaigns?create=true');
   };
 
   return (

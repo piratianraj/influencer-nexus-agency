@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [userType, setUserType] = useState<'brand' | 'creator'>('brand');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { login, signup, loginAsGuest, isLoading } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -32,6 +34,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
     if (mode === 'login') {
       const { error } = await login(email, password);
@@ -41,6 +44,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
           description: error,
           variant: "destructive"
         });
+        setIsSubmitting(false);
         return;
       }
       toast({
@@ -56,6 +60,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
           description: "Please enter your full name.",
           variant: "destructive"
         });
+        setIsSubmitting(false);
         return;
       }
       
@@ -66,6 +71,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
           description: error,
           variant: "destructive"
         });
+        setIsSubmitting(false);
         return;
       }
       toast({
@@ -80,6 +86,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
     setEmail('');
     setPassword('');
     setName('');
+    setIsSubmitting(false);
   };
 
   const handleGuestLogin = async () => {
@@ -159,8 +166,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
               minLength={6}
             />
           </div>
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? 'Loading...' : mode === 'login' ? 'Sign In' : 'Create Account'}
+          <Button type="submit" className="w-full" disabled={isSubmitting || isLoading}>
+            {isSubmitting || isLoading ? 'Loading...' : mode === 'login' ? 'Sign In' : 'Create Account'}
           </Button>
         </form>
         

@@ -1,15 +1,17 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Plus, Users, TrendingUp, DollarSign, Calendar, CheckCircle } from 'lucide-react';
+import { Plus, Users, TrendingUp, DollarSign, Calendar, CheckCircle, ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthModal } from '@/components/AuthModal';
 import { CampaignDetails } from '@/components/CampaignDetails';
 import { CampaignReport } from '@/components/CampaignReport';
 import { CreateCampaign } from '@/components/CreateCampaign';
 import { WorkflowGuide } from '@/components/WorkflowGuide';
+import { Header } from '@/components/Header';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
@@ -107,6 +109,20 @@ const Campaigns = () => {
   const [campaigns, setCampaigns] = useState<Campaign[]>(mockCampaigns);
   const [showNewCampaignSuccess, setShowNewCampaignSuccess] = useState(false);
 
+  // Handle URL query parameter for creating campaign
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    if (urlParams.get('create') === 'true') {
+      if (user) {
+        setShowCreateCampaign(true);
+        // Clean up URL
+        navigate('/campaigns', { replace: true });
+      } else {
+        setAuthModalOpen(true);
+      }
+    }
+  }, [location.search, user, navigate]);
+
   // Handle coming from Discovery with selected creators
   useEffect(() => {
     const discoveryData = location.state;
@@ -193,13 +209,16 @@ const Campaigns = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Required</h1>
-          <p className="text-gray-600 mb-6">Please sign in to view your campaigns</p>
-          <Button onClick={() => setAuthModalOpen(true)}>
-            Sign In
-          </Button>
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Access Required</h1>
+            <p className="text-gray-600 mb-6">Please sign in to view your campaigns</p>
+            <Button onClick={() => setAuthModalOpen(true)}>
+              Sign In
+            </Button>
+          </div>
         </div>
         <AuthModal 
           isOpen={authModalOpen} 
@@ -211,23 +230,29 @@ const Campaigns = () => {
 
   if (selectedCampaign && showReport) {
     return (
-      <CampaignReport 
-        campaign={selectedCampaign} 
-        onBack={() => {
-          setShowReport(false);
-          setSelectedCampaign(null);
-        }} 
-      />
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <CampaignReport 
+          campaign={selectedCampaign} 
+          onBack={() => {
+            setShowReport(false);
+            setSelectedCampaign(null);
+          }} 
+        />
+      </div>
     );
   }
 
   if (selectedCampaign) {
     return (
-      <CampaignDetails 
-        campaign={selectedCampaign} 
-        onBack={() => setSelectedCampaign(null)}
-        onViewReport={() => setShowReport(true)}
-      />
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <CampaignDetails 
+          campaign={selectedCampaign} 
+          onBack={() => setSelectedCampaign(null)}
+          onViewReport={() => setShowReport(true)}
+        />
+      </div>
     );
   }
 
@@ -235,6 +260,7 @@ const Campaigns = () => {
     const discoveryData = location.state;
     return (
       <div className="min-h-screen bg-gray-50">
+        <Header />
         {showNewCampaignSuccess && discoveryData?.selectedCreators && (
           <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-6">
             <div className="flex items-center">
@@ -260,6 +286,7 @@ const Campaigns = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <Header />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8 flex justify-between items-center">
           <div>
@@ -273,9 +300,9 @@ const Campaigns = () => {
             >
               Workflow Guide
             </Button>
-            <Button onClick={() => navigate('/brand-brief')} className="flex items-center gap-2">
+            <Button onClick={() => setShowCreateCampaign(true)} className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
-              Start New Campaign
+              New Campaign
             </Button>
           </div>
         </div>
@@ -373,7 +400,7 @@ const Campaigns = () => {
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No campaigns yet</h3>
             <p className="text-gray-600 mb-6">Get started by creating your first influencer campaign</p>
-            <Button onClick={() => navigate('/brand-brief')}>
+            <Button onClick={() => setShowCreateCampaign(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Create Your First Campaign
             </Button>

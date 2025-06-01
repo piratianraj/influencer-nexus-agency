@@ -41,51 +41,12 @@ export const useBrandBriefAnalysis = () => {
   const [briefAnalysis, setBriefAnalysis] = useState<BriefAnalysis | null>(null);
   const [influencerRecommendations, setInfluencerRecommendations] = useState<InfluencerRecommendation[]>([]);
   const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics | null>(null);
-  const [isGeneratingEmbeddings, setIsGeneratingEmbeddings] = useState(false);
   const { toast } = useToast();
-
-  const generateCreatorEmbeddings = async () => {
-    setIsGeneratingEmbeddings(true);
-    try {
-      console.log('Generating creator embeddings...');
-      
-      const { data, error } = await supabase.functions.invoke('generate-creator-embeddings');
-
-      if (error) {
-        console.error('Embedding generation error:', error);
-        toast({
-          title: "Embedding Generation Error",
-          description: "Failed to generate creator embeddings. Please try again.",
-          variant: "destructive"
-        });
-        return false;
-      }
-
-      console.log('Embedding generation result:', data);
-      
-      toast({
-        title: "Embeddings Generated",
-        description: `Successfully processed ${data.newEmbeddings} new creators. Total: ${data.totalCreators} creators in database.`,
-      });
-
-      return true;
-    } catch (error) {
-      console.error('Unexpected embedding generation error:', error);
-      toast({
-        title: "Embedding Generation Error",
-        description: "An unexpected error occurred while generating embeddings.",
-        variant: "destructive"
-      });
-      return false;
-    } finally {
-      setIsGeneratingEmbeddings(false);
-    }
-  };
 
   const analyzeBrief = async (briefText: string, useRAG: boolean = true) => {
     setIsAnalyzing(true);
     try {
-      console.log('Analyzing brand brief with RAG optimization:', briefText);
+      console.log('Analyzing brand brief with AI optimization:', briefText);
       
       const functionName = useRAG ? 'rag-brand-brief-analysis' : 'analyze-brand-brief';
       
@@ -98,10 +59,10 @@ export const useBrandBriefAnalysis = () => {
         
         // If RAG analysis fails, fallback to original method
         if (useRAG) {
-          console.log('RAG analysis failed, falling back to original method...');
+          console.log('AI optimization failed, falling back to standard analysis...');
           toast({
-            title: "Using Fallback Analysis",
-            description: "RAG optimization unavailable, using standard analysis method.",
+            title: "Using Standard Analysis",
+            description: "AI optimization unavailable, using standard analysis method.",
             variant: "default"
           });
           return await analyzeBrief(briefText, false);
@@ -153,9 +114,7 @@ export const useBrandBriefAnalysis = () => {
 
   return {
     analyzeBrief,
-    generateCreatorEmbeddings,
     isAnalyzing,
-    isGeneratingEmbeddings,
     briefAnalysis,
     influencerRecommendations,
     performanceMetrics
