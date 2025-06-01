@@ -1,10 +1,11 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import OutreachModal from "@/components/OutreachModal";
+import NegotiationSummary from "@/components/NegotiationSummary";
 
 interface Creator {
   id: string;
@@ -46,6 +47,12 @@ const Discovery = () => {
   const [brief, setBrief] = useState<Brief | null>(null);
   const [expandedCreator, setExpandedCreator] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [outreachModal, setOutreachModal] = useState<{
+    isOpen: boolean;
+    creator: Creator | null;
+    type: "email" | "call";
+  }>({ isOpen: false, creator: null, type: "email" });
+  const [negotiations, setNegotiations] = useState<Record<string, any>>({});
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -192,6 +199,62 @@ const Discovery = () => {
     };
   };
 
+  const handleOpenOutreach = (creator: Creator, type: "email" | "call") => {
+    setOutreachModal({
+      isOpen: true,
+      creator,
+      type
+    });
+  };
+
+  const handleCloseOutreach = () => {
+    setOutreachModal({
+      isOpen: false,
+      creator: null,
+      type: "email"
+    });
+  };
+
+  const handleNegotiationComplete = (creatorId: string, negotiationData: any) => {
+    setNegotiations(prev => ({
+      ...prev,
+      [creatorId]: negotiationData
+    }));
+  };
+
+  const handleGenerateContract = (creatorId: string) => {
+    const creator = creators.find(c => c.id === creatorId);
+    const negotiation = negotiations[creatorId];
+    
+    if (!creator || !negotiation) return;
+
+    // Mock contract generation
+    const contractData = `Contract_${creator.username}_${Date.now()}.pdf`;
+    console.log("Generating contract:", contractData);
+    
+    toast({
+      title: "Contract Generated",
+      description: `Contract stub created for ${creator.name}`,
+    });
+
+    // Update negotiation with contract status
+    setNegotiations(prev => ({
+      ...prev,
+      [creatorId]: {
+        ...prev[creatorId],
+        contract_status: "unsigned",
+        contract_generated_at: new Date().toISOString()
+      }
+    }));
+  };
+
+  const getCreatorStatus = (creatorId: string) => {
+    const negotiation = negotiations[creatorId];
+    if (!negotiation) return "Not Contacted";
+    if (negotiation.status === "completed") return "Negotiation Complete";
+    return "In Progress";
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 p-6">
@@ -244,6 +307,8 @@ const Discovery = () => {
           {creators.map((creator) => {
             const contactInfo = extractContactInfo(creator.biography);
             const isExpanded = expandedCreator === creator.id;
+            const negotiation = negotiations[creator.id];
+            const status = getCreatorStatus(creator.id);
             
             return (
               <Card key={creator.id} className="hover:shadow-lg transition-shadow">
@@ -266,6 +331,11 @@ const Discovery = () => {
                           </Badge>
                           <Badge variant="outline">{creator.niche}</Badge>
                           <Badge variant="outline">{creator.language}</Badge>
+                          <Badge 
+                            variant={status === "Negotiation Complete" ? "default" : status === "In Progress" ? "secondary" : "outline"}
+                          >
+                            {status}
+                          </Badge>
                         </div>
                       </div>
                     </div>
@@ -321,17 +391,34 @@ const Discovery = () => {
                     </div>
                   )}
 
-                  <div className="flex space-x-3">
+                  {/* Show negotiation summary if completed */}
+                  {negotiation && negotiation.status === "completed" && (
+                    <NegotiationSummary
+                      negotiation={negotiation}
+                      creatorName={creator.name}
+                      onGenerateContract={() => handleGenerateContract(creator.id)}
+                    />
+                  )}
+
+                  <div className="flex space-x-3 mt-4">
                     <Button 
                       variant="outline" 
                       onClick={() => setExpandedCreator(isExpanded ? null : creator.id)}
                     >
                       {isExpanded ? "Hide Details" : "View Details"}
                     </Button>
-                    <Button variant="default">
+                    <Button 
+                      variant="default"
+                      onClick={() => handleOpenOutreach(creator, "email")}
+                      disabled={!!negotiation}
+                    >
                       Contact
                     </Button>
-                    <Button variant="secondary">
+                    <Button 
+                      variant="secondary"
+                      onClick={() => handleOpenOutreach(creator, "call")}
+                      disabled={!!negotiation}
+                    >
                       Call
                     </Button>
                   </div>
