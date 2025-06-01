@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Progress } from '@/components/ui/progress';
-import { ArrowLeft, Users, TrendingUp, DollarSign, Eye, Heart, Share, BarChart3 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { ArrowLeft, Users, TrendingUp, DollarSign, Eye, Heart, Share, BarChart3, Trash2 } from 'lucide-react';
 import { WorkflowGuide } from '@/components/WorkflowGuide';
 
 interface Campaign {
@@ -39,6 +40,7 @@ interface CampaignDetailsProps {
   onBack: () => void;
   onViewReport?: () => void;
   onEdit?: () => void;
+  onDelete?: (campaignId: string) => void;
 }
 
 // Mock influencer data
@@ -95,7 +97,8 @@ export const CampaignDetails: React.FC<CampaignDetailsProps> = ({
   campaign, 
   onBack, 
   onViewReport, 
-  onEdit
+  onEdit,
+  onDelete
 }) => {
   const influencers = mockInfluencers[campaign.id] || [];
 
@@ -166,6 +169,34 @@ export const CampaignDetails: React.FC<CampaignDetailsProps> = ({
                 <Button onClick={onEdit} className="flex items-center gap-2" variant="outline">
                   Edit Campaign
                 </Button>
+              )}
+              {onDelete && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50">
+                      <Trash2 className="h-4 w-4" />
+                      Delete
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Campaign</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete "{campaign.name}"? This action cannot be undone.
+                        All associated data including creators, analytics, and contracts will be permanently removed.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => onDelete(campaign.id)}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        Delete Campaign
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               )}
               <Badge className={getStatusColor(campaign.status)}>
                 {campaign.status}

@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Plus, Users, TrendingUp, DollarSign, Calendar, CheckCircle, ArrowLeft, ArrowLeft as LucideArrowLeft } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Plus, Users, TrendingUp, DollarSign, Calendar, CheckCircle, ArrowLeft, ArrowLeft as LucideArrowLeft, Trash2, MoreVertical } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthModal } from '@/components/AuthModal';
 import { CampaignDetails } from '@/components/CampaignDetails';
@@ -13,101 +14,23 @@ import { WorkflowGuide } from '@/components/WorkflowGuide';
 import { Header } from '@/components/Header';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
-
-interface Campaign {
-  id: string;
-  name: string;
-  description: string;
-  status: 'draft' | 'active' | 'paused' | 'completed' | 'cancelled';
-  budget: number;
-  total_spend: number;
-  total_reach: number;
-  total_impressions: number;
-  total_engagement: number;
-  start_date: string;
-  end_date: string;
-  influencer_count: number;
-  workflow_step: string;
-}
-
-// Mock data since we can't use real Supabase auth yet
-const mockCampaigns: Campaign[] = [
-  {
-    id: '1',
-    name: 'Summer Fashion Launch',
-    description: 'Promoting our new summer collection with fashion influencers',
-    status: 'active',
-    budget: 50000,
-    total_spend: 32500,
-    total_reach: 2500000,
-    total_impressions: 5200000,
-    total_engagement: 125000,
-    start_date: '2024-06-01',
-    end_date: '2024-08-31',
-    influencer_count: 8,
-    workflow_step: 'payment'
-  },
-  {
-    id: '2',
-    name: 'Tech Product Review',
-    description: 'Getting tech reviewers to showcase our latest gadget',
-    status: 'completed',
-    budget: 25000,
-    total_spend: 24800,
-    total_reach: 1200000,
-    total_impressions: 2800000,
-    total_engagement: 85000,
-    start_date: '2024-04-15',
-    end_date: '2024-05-15',
-    influencer_count: 5,
-    workflow_step: 'report'
-  },
-  {
-    id: '3',
-    name: 'Holiday Campaign 2024',
-    description: 'End of year holiday marketing push',
-    status: 'draft',
-    budget: 75000,
-    total_spend: 0,
-    total_reach: 0,
-    total_impressions: 0,
-    total_engagement: 0,
-    start_date: '2024-12-01',
-    end_date: '2024-12-31',
-    influencer_count: 0,
-    workflow_step: 'campaign-creation'
-  },
-  {
-    id: '4',
-    name: 'Fitness Challenge',
-    description: 'Promoting healthy lifestyle with fitness influencers',
-    status: 'paused',
-    budget: 30000,
-    total_spend: 15600,
-    total_reach: 800000,
-    total_impressions: 1900000,
-    total_engagement: 45000,
-    start_date: '2024-05-01',
-    end_date: '2024-07-31',
-    influencer_count: 3,
-    workflow_step: 'contract'
-  }
-];
+import { useCampaigns } from '@/hooks/useCampaigns';
 
 const Campaigns = () => {
   const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { campaigns, loading, createCampaign, updateCampaign, deleteCampaign } = useCampaigns();
   
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
+  const [selectedCampaign, setSelectedCampaign] = useState<any>(null);
   const [showCreateCampaign, setShowCreateCampaign] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showWorkflowGuide, setShowWorkflowGuide] = useState(false);
-  const [campaigns, setCampaigns] = useState<Campaign[]>(mockCampaigns);
   const [showNewCampaignSuccess, setShowNewCampaignSuccess] = useState(false);
   const [showEditCampaign, setShowEditCampaign] = useState(false);
+  const [deletingCampaignId, setDeletingCampaignId] = useState<string | null>(null);
 
   // Handle URL query parameter for creating campaign
   useEffect(() => {
@@ -137,7 +60,7 @@ const Campaigns = () => {
     }
   }, [location.state, toast]);
 
-  const getStatusColor = (status: Campaign['status']) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case 'active': return 'bg-green-100 text-green-800';
       case 'completed': return 'bg-blue-100 text-blue-800';
@@ -185,42 +108,47 @@ const Campaigns = () => {
     return labels[step] || step;
   };
 
-  const handleCreateCampaign = (newCampaign: Omit<Campaign, 'id'>) => {
+  const handleCreateCampaign = async (newCampaign: any) => {
     const discoveryData = location.state;
-    const campaign: Campaign = {
+    const campaignData = {
       ...newCampaign,
-      id: Date.now().toString(),
       workflow_step: 'campaign-creation',
       influencer_count: discoveryData?.selectedCreators?.length || 0
     };
     
-    setCampaigns([campaign, ...campaigns]);
-    setShowCreateCampaign(false);
-    setShowNewCampaignSuccess(false);
-    
-    // Clear location state
-    navigate('/campaigns', { replace: true });
-    
-    toast({
-      title: "Campaign Created",
-      description: "Your new campaign has been created successfully!",
-    });
+    const result = await createCampaign(campaignData);
+    if (result) {
+      setShowCreateCampaign(false);
+      setShowNewCampaignSuccess(false);
+      navigate('/campaigns', { replace: true });
+    }
   };
 
-  const handleEditCampaign = (campaign: Campaign) => {
+  const handleEditCampaign = (campaign: any) => {
     setSelectedCampaign(campaign);
     setShowEditCampaign(true);
   };
 
-  const handleUpdateCampaign = (updatedCampaign: Omit<Campaign, 'id'>) => {
+  const handleUpdateCampaign = async (updatedCampaign: any) => {
     if (!selectedCampaign) return;
-    setCampaigns(campaigns.map(c => c.id === selectedCampaign.id ? { ...selectedCampaign, ...updatedCampaign } : c));
-    setShowEditCampaign(false);
-    setSelectedCampaign(null);
-    toast({
-      title: 'Campaign Updated',
-      description: 'Your campaign has been updated successfully!'
-    });
+    const result = await updateCampaign(selectedCampaign.id, updatedCampaign);
+    if (result) {
+      setShowEditCampaign(false);
+      setSelectedCampaign(null);
+    }
+  };
+
+  const handleDeleteCampaign = async (campaignId: string) => {
+    setDeletingCampaignId(campaignId);
+    const success = await deleteCampaign(campaignId);
+    setDeletingCampaignId(null);
+    
+    if (success) {
+      // If we're currently viewing the deleted campaign, go back to list
+      if (selectedCampaign?.id === campaignId) {
+        setSelectedCampaign(null);
+      }
+    }
   };
 
   if (!user) {
@@ -281,6 +209,7 @@ const Campaigns = () => {
           onBack={() => setSelectedCampaign(null)}
           onViewReport={() => setShowReport(true)}
           onEdit={() => handleEditCampaign(selectedCampaign)}
+          onDelete={handleDeleteCampaign}
         />
       </div>
     );
@@ -345,21 +274,54 @@ const Campaigns = () => {
           {campaigns.map((campaign) => (
             <Card 
               key={campaign.id} 
-              className="hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={() => setSelectedCampaign(campaign)}
+              className="hover:shadow-lg transition-shadow cursor-pointer relative group"
             >
               <CardHeader>
                 <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg">{campaign.name}</CardTitle>
-                  <Badge className={getStatusColor(campaign.status)}>
-                    {campaign.status}
-                  </Badge>
+                  <div className="flex-1" onClick={() => setSelectedCampaign(campaign)}>
+                    <CardTitle className="text-lg">{campaign.name}</CardTitle>
+                    <Badge className={`${getStatusColor(campaign.status)} mt-2`}>
+                      {campaign.status}
+                    </Badge>
+                  </div>
+                  
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        disabled={deletingCampaignId === campaign.id}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Campaign</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete "{campaign.name}"? This action cannot be undone.
+                          All associated data including creators, analytics, and contracts will be permanently removed.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDeleteCampaign(campaign.id)}
+                          className="bg-red-600 hover:bg-red-700"
+                          disabled={deletingCampaignId === campaign.id}
+                        >
+                          {deletingCampaignId === campaign.id ? 'Deleting...' : 'Delete Campaign'}
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
-                <CardDescription className="line-clamp-2">
+                <CardDescription className="line-clamp-2" onClick={() => setSelectedCampaign(campaign)}>
                   {campaign.description}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent onClick={() => setSelectedCampaign(campaign)}>
                 <div className="space-y-3">
                   {/* Workflow Progress */}
                   <div className="mb-4">
@@ -421,7 +383,7 @@ const Campaigns = () => {
           ))}
         </div>
 
-        {campaigns.length === 0 && (
+        {campaigns.length === 0 && !loading && (
           <div className="text-center py-12">
             <div className="text-gray-400 mb-4">
               <Users className="h-12 w-12 mx-auto" />
