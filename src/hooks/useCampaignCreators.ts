@@ -60,14 +60,14 @@ export const useCampaignCreators = (campaignId?: string) => {
         id: item.id,
         campaign_id: item.campaign_id,
         creator_id: item.creator_id,
-        status: item.status,
+        status: item.status as CampaignCreator['status'],
         agreed_rate: item.agreed_rate,
         deliverables_count: item.deliverables_count,
-        contact_method: item.contact_method,
+        contact_method: item.contact_method as CampaignCreator['contact_method'],
         contacted_at: item.contacted_at,
         negotiation_notes: item.negotiation_notes,
         contract_signed: item.contract_signed,
-        payment_status: item.payment_status,
+        payment_status: item.payment_status as CampaignCreator['payment_status'],
         created_at: item.created_at,
         updated_at: item.updated_at
       })) || []);
