@@ -1,10 +1,11 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, Users, TrendingUp, DollarSign, Eye, Heart, Share } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { ArrowLeft, Users, TrendingUp, DollarSign, Eye, Heart, Share, BarChart3 } from 'lucide-react';
+import { WorkflowGuide } from '@/components/WorkflowGuide';
 
 interface Campaign {
   id: string;
@@ -19,6 +20,7 @@ interface Campaign {
   start_date: string;
   end_date: string;
   influencer_count: number;
+  workflow_step?: string;
 }
 
 interface Influencer {
@@ -35,6 +37,7 @@ interface Influencer {
 interface CampaignDetailsProps {
   campaign: Campaign;
   onBack: () => void;
+  onViewReport?: () => void;
 }
 
 // Mock influencer data
@@ -87,7 +90,11 @@ const mockInfluencers: Record<string, Influencer[]> = {
   ]
 };
 
-export const CampaignDetails: React.FC<CampaignDetailsProps> = ({ campaign, onBack }) => {
+export const CampaignDetails: React.FC<CampaignDetailsProps> = ({ 
+  campaign, 
+  onBack, 
+  onViewReport 
+}) => {
   const influencers = mockInfluencers[campaign.id] || [];
 
   const getStatusColor = (status: Campaign['status'] | Influencer['status']) => {
@@ -122,6 +129,12 @@ export const CampaignDetails: React.FC<CampaignDetailsProps> = ({ campaign, onBa
     return num.toString();
   };
 
+  const getWorkflowProgress = (step: string) => {
+    const steps = ['campaign-creation', 'creator-search', 'outreach', 'deal-negotiation', 'contract', 'payment', 'report'];
+    const currentIndex = steps.indexOf(step);
+    return ((currentIndex + 1) / steps.length) * 100;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -140,11 +153,34 @@ export const CampaignDetails: React.FC<CampaignDetailsProps> = ({ campaign, onBa
               <h1 className="text-3xl font-bold text-gray-900">{campaign.name}</h1>
               <p className="text-gray-600 mt-2">{campaign.description}</p>
             </div>
-            <Badge className={getStatusColor(campaign.status)}>
-              {campaign.status}
-            </Badge>
+            <div className="flex gap-2">
+              {onViewReport && (
+                <Button onClick={onViewReport} className="flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  View Report
+                </Button>
+              )}
+              <Badge className={getStatusColor(campaign.status)}>
+                {campaign.status}
+              </Badge>
+            </div>
           </div>
         </div>
+
+        {/* Workflow Progress */}
+        {campaign.workflow_step && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle className="text-lg">Campaign Workflow Progress</CardTitle>
+              <CardDescription>
+                Track your campaign progress through each stage
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <WorkflowGuide currentStep={campaign.workflow_step} />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Campaign Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

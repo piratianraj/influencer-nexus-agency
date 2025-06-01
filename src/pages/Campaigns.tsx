@@ -1,13 +1,15 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { Plus, Users, TrendingUp, DollarSign, Calendar } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthModal } from '@/components/AuthModal';
 import { CampaignDetails } from '@/components/CampaignDetails';
+import { CampaignReport } from '@/components/CampaignReport';
 import { CreateCampaign } from '@/components/CreateCampaign';
+import { WorkflowGuide } from '@/components/WorkflowGuide';
 
 interface Campaign {
   id: string;
@@ -22,6 +24,7 @@ interface Campaign {
   start_date: string;
   end_date: string;
   influencer_count: number;
+  workflow_step: string;
 }
 
 // Mock data since we can't use real Supabase auth yet
@@ -38,7 +41,8 @@ const mockCampaigns: Campaign[] = [
     total_engagement: 125000,
     start_date: '2024-06-01',
     end_date: '2024-08-31',
-    influencer_count: 8
+    influencer_count: 8,
+    workflow_step: 'payment'
   },
   {
     id: '2',
@@ -52,7 +56,8 @@ const mockCampaigns: Campaign[] = [
     total_engagement: 85000,
     start_date: '2024-04-15',
     end_date: '2024-05-15',
-    influencer_count: 5
+    influencer_count: 5,
+    workflow_step: 'report'
   },
   {
     id: '3',
@@ -66,7 +71,8 @@ const mockCampaigns: Campaign[] = [
     total_engagement: 0,
     start_date: '2024-12-01',
     end_date: '2024-12-31',
-    influencer_count: 0
+    influencer_count: 0,
+    workflow_step: 'campaign-creation'
   },
   {
     id: '4',
@@ -80,7 +86,8 @@ const mockCampaigns: Campaign[] = [
     total_engagement: 45000,
     start_date: '2024-05-01',
     end_date: '2024-07-31',
-    influencer_count: 3
+    influencer_count: 3,
+    workflow_step: 'contract'
   }
 ];
 
@@ -89,6 +96,8 @@ const Campaigns = () => {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [showCreateCampaign, setShowCreateCampaign] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const [showWorkflowGuide, setShowWorkflowGuide] = useState(false);
   const [campaigns, setCampaigns] = useState<Campaign[]>(mockCampaigns);
 
   const getStatusColor = (status: Campaign['status']) => {
@@ -120,10 +129,30 @@ const Campaigns = () => {
     return num.toString();
   };
 
+  const getWorkflowProgress = (step: string) => {
+    const steps = ['campaign-creation', 'creator-search', 'outreach', 'deal-negotiation', 'contract', 'payment', 'report'];
+    const currentIndex = steps.indexOf(step);
+    return ((currentIndex + 1) / steps.length) * 100;
+  };
+
+  const getWorkflowStepLabel = (step: string) => {
+    const labels: Record<string, string> = {
+      'campaign-creation': 'Campaign Creation',
+      'creator-search': 'Creator Search',
+      'outreach': 'Outreach',
+      'deal-negotiation': 'Negotiation',
+      'contract': 'Contract',
+      'payment': 'Payment',
+      'report': 'Report'
+    };
+    return labels[step] || step;
+  };
+
   const handleCreateCampaign = (newCampaign: Omit<Campaign, 'id'>) => {
     const campaign: Campaign = {
       ...newCampaign,
       id: Date.now().toString(),
+      workflow_step: 'campaign-creation'
     };
     setCampaigns([...campaigns, campaign]);
     setShowCreateCampaign(false);
@@ -147,11 +176,24 @@ const Campaigns = () => {
     );
   }
 
+  if (selectedCampaign && showReport) {
+    return (
+      <CampaignReport 
+        campaign={selectedCampaign} 
+        onBack={() => {
+          setShowReport(false);
+          setSelectedCampaign(null);
+        }} 
+      />
+    );
+  }
+
   if (selectedCampaign) {
     return (
       <CampaignDetails 
         campaign={selectedCampaign} 
-        onBack={() => setSelectedCampaign(null)} 
+        onBack={() => setSelectedCampaign(null)}
+        onViewReport={() => setShowReport(true)}
       />
     );
   }
@@ -173,11 +215,25 @@ const Campaigns = () => {
             <h1 className="text-3xl font-bold text-gray-900">My Campaigns</h1>
             <p className="text-gray-600 mt-2">Manage your influencer marketing campaigns</p>
           </div>
-          <Button onClick={() => setShowCreateCampaign(true)} className="flex items-center gap-2">
-            <Plus className="h-4 w-4" />
-            Start New Campaign
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowWorkflowGuide(!showWorkflowGuide)}
+            >
+              Workflow Guide
+            </Button>
+            <Button onClick={() => setShowCreateCampaign(true)} className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Start New Campaign
+            </Button>
+          </div>
         </div>
+
+        {showWorkflowGuide && (
+          <div className="mb-8">
+            <WorkflowGuide />
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {campaigns.map((campaign) => (
@@ -199,6 +255,21 @@ const Campaigns = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
+                  {/* Workflow Progress */}
+                  <div className="mb-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-medium text-gray-600">Workflow Progress</span>
+                      <Badge variant="outline" className="text-xs">
+                        {getWorkflowStepLabel(campaign.workflow_step)}
+                      </Badge>
+                    </div>
+                    <Progress 
+                      value={getWorkflowProgress(campaign.workflow_step)} 
+                      className="h-2"
+                    />
+                  </div>
+
+                  {/* Existing metrics */}
                   <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <DollarSign className="h-4 w-4" />
