@@ -1,8 +1,8 @@
 
-import React, { useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, Plus, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { AdvancedFilters, FilterOptions } from '@/components/AdvancedFilters';
 import DiscoveryHeader from '@/components/DiscoveryHeader';
 import SearchAndFilters from '@/components/SearchAndFilters';
@@ -13,9 +13,13 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import { useCreatorData } from '@/hooks/useCreatorData';
 import { useCreatorFilters } from '@/hooks/useCreatorFilters';
 import { useDiscoveryState } from '@/hooks/useDiscoveryState';
+import { Card, CardContent } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
 
 const Discovery = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { toast } = useToast();
   const [filters, setFilters] = useState<FilterOptions>({
     platform: [],
     followers: { min: 0, max: 0 },
@@ -25,6 +29,10 @@ const Discovery = () => {
     priceRange: { min: 0, max: 0 },
     verified: null,
   });
+
+  // Get data from brand brief if coming from that flow
+  const briefData = location.state;
+  const [selectedCreators, setSelectedCreators] = useState<string[]>([]);
 
   const { creators, loading } = useCreatorData();
   const { applyFilters, applySearch } = useCreatorFilters();
@@ -41,6 +49,36 @@ const Discovery = () => {
     closeContractModal,
     closeInvoiceModal,
   } = useDiscoveryState();
+
+  // Apply brief-based filters if coming from brand brief
+  useEffect(() => {
+    if (briefData?.fromBrief && briefData?.briefAnalysis) {
+      console.log('Applying filters from brand brief:', briefData.briefAnalysis);
+      
+      // Apply intelligent filters based on brief analysis
+      const intelligentFilters: Partial<FilterOptions> = {};
+      
+      // You can enhance this logic based on your brief analysis structure
+      if (briefData.briefAnalysis.platforms) {
+        intelligentFilters.platform = briefData.briefAnalysis.platforms;
+      }
+      
+      if (briefData.briefAnalysis.targetAudience) {
+        // Apply audience-based filters
+        intelligentFilters.niche = briefData.briefAnalysis.targetAudience.interests || [];
+      }
+
+      setFilters(prevFilters => ({
+        ...prevFilters,
+        ...intelligentFilters
+      }));
+
+      toast({
+        title: "Brief Analysis Applied",
+        description: "Filters have been set based on your brand brief analysis.",
+      });
+    }
+  }, [briefData, toast]);
 
   const resetFilters = () => {
     console.log('Resetting filters');
@@ -64,6 +102,34 @@ const Discovery = () => {
       ...prevFilters,
       ...intelligentFilters
     }));
+  };
+
+  const handleCreatorSelect = (creatorId: string) => {
+    setSelectedCreators(prev => 
+      prev.includes(creatorId) 
+        ? prev.filter(id => id !== creatorId)
+        : [...prev, creatorId]
+    );
+  };
+
+  const handleCreateCampaign = () => {
+    if (selectedCreators.length === 0) {
+      toast({
+        title: "No Creators Selected",
+        description: "Please select at least one creator to proceed with campaign creation.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Navigate to campaigns with selected creators data
+    navigate('/campaigns', { 
+      state: { 
+        selectedCreators, 
+        briefData: briefData?.briefAnalysis,
+        fromDiscovery: true 
+      } 
+    });
   };
 
   // Apply search first, then filters
@@ -91,11 +157,40 @@ const Discovery = () => {
             Back
           </Button>
           
-          <h1 className="text-4xl font-bold mb-4">
-            <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Discover Creators
-            </span>
-          </h1>
+          <div className="flex justify-between items-start mb-6">
+            <div>
+              <h1 className="text-4xl font-bold mb-4">
+                <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                  Discover Creators
+                </span>
+              </h1>
+              {briefData?.fromBrief && (
+                <p className="text-gray-600">
+                  Showing creators based on your brand brief analysis
+                </p>
+              )}
+            </div>
+
+            {/* Campaign Creation Card */}
+            {selectedCreators.length > 0 && (
+              <Card className="bg-white/70 backdrop-blur-sm border border-white/20 shadow-lg rounded-2xl">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                    <span className="font-medium">{selectedCreators.length} creator{selectedCreators.length !== 1 ? 's' : ''} selected</span>
+                    <Button 
+                      onClick={handleCreateCampaign}
+                      size="sm"
+                      className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Campaign
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
           
           <SearchAndFilters
             searchTerm={state.searchTerm}
@@ -122,7 +217,10 @@ const Discovery = () => {
           )}
 
           <DiscoveryContent
-            filteredCreators={filteredCreators}
+            filteredCreators={filteredCreators.map(creator => ({
+              ...creator,
+              isSelected: selectedCreators.includes(creator.id)
+            }))}
             negotiations={state.negotiations}
             contractStatuses={state.contractStatuses}
             invoiceStatuses={state.invoiceStatuses}
@@ -130,8 +228,31 @@ const Discovery = () => {
             onOpenContract={handleOpenContract}
             onOpenInvoice={handleOpenInvoice}
             onClearFilters={resetFilters}
+            onCreatorSelect={handleCreatorSelect}
           />
         </div>
+
+        {/* Bottom Action Bar */}
+        {selectedCreators.length > 0 && (
+          <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
+            <Card className="bg-white/90 backdrop-blur-sm border border-white/20 shadow-2xl rounded-full">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-4">
+                  <span className="font-medium text-gray-700">
+                    {selectedCreators.length} creator{selectedCreators.length !== 1 ? 's' : ''} selected
+                  </span>
+                  <Button 
+                    onClick={handleCreateCampaign}
+                    className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white rounded-full"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Campaign
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
 
       <DiscoveryModals

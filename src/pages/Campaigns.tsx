@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Plus, Users, TrendingUp, DollarSign, Calendar } from 'lucide-react';
+import { Plus, Users, TrendingUp, DollarSign, Calendar, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthModal } from '@/components/AuthModal';
 import { CampaignDetails } from '@/components/CampaignDetails';
 import { CampaignReport } from '@/components/CampaignReport';
 import { CreateCampaign } from '@/components/CreateCampaign';
 import { WorkflowGuide } from '@/components/WorkflowGuide';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 interface Campaign {
   id: string;
@@ -93,12 +95,31 @@ const mockCampaigns: Campaign[] = [
 
 const Campaigns = () => {
   const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [showCreateCampaign, setShowCreateCampaign] = useState(false);
   const [showReport, setShowReport] = useState(false);
   const [showWorkflowGuide, setShowWorkflowGuide] = useState(false);
   const [campaigns, setCampaigns] = useState<Campaign[]>(mockCampaigns);
+  const [showNewCampaignSuccess, setShowNewCampaignSuccess] = useState(false);
+
+  // Handle coming from Discovery with selected creators
+  useEffect(() => {
+    const discoveryData = location.state;
+    if (discoveryData?.fromDiscovery && discoveryData?.selectedCreators) {
+      setShowCreateCampaign(true);
+      setShowNewCampaignSuccess(true);
+      
+      toast({
+        title: "Ready to Create Campaign",
+        description: `${discoveryData.selectedCreators.length} creators selected from Discovery.`,
+      });
+    }
+  }, [location.state, toast]);
 
   const getStatusColor = (status: Campaign['status']) => {
     switch (status) {
@@ -149,13 +170,25 @@ const Campaigns = () => {
   };
 
   const handleCreateCampaign = (newCampaign: Omit<Campaign, 'id'>) => {
+    const discoveryData = location.state;
     const campaign: Campaign = {
       ...newCampaign,
       id: Date.now().toString(),
-      workflow_step: 'campaign-creation'
+      workflow_step: 'campaign-creation',
+      influencer_count: discoveryData?.selectedCreators?.length || 0
     };
-    setCampaigns([...campaigns, campaign]);
+    
+    setCampaigns([campaign, ...campaigns]);
     setShowCreateCampaign(false);
+    setShowNewCampaignSuccess(false);
+    
+    // Clear location state
+    navigate('/campaigns', { replace: true });
+    
+    toast({
+      title: "Campaign Created",
+      description: "Your new campaign has been created successfully!",
+    });
   };
 
   if (!user) {
@@ -199,11 +232,29 @@ const Campaigns = () => {
   }
 
   if (showCreateCampaign) {
+    const discoveryData = location.state;
     return (
-      <CreateCampaign 
-        onBack={() => setShowCreateCampaign(false)}
-        onSubmit={handleCreateCampaign}
-      />
+      <div className="min-h-screen bg-gray-50">
+        {showNewCampaignSuccess && discoveryData?.selectedCreators && (
+          <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-6">
+            <div className="flex items-center">
+              <CheckCircle className="h-5 w-5 text-green-400 mr-2" />
+              <p className="text-green-700">
+                Great! You've selected {discoveryData.selectedCreators.length} creator{discoveryData.selectedCreators.length !== 1 ? 's' : ''} from Discovery. 
+                Now let's create your campaign.
+              </p>
+            </div>
+          </div>
+        )}
+        <CreateCampaign 
+          onBack={() => {
+            setShowCreateCampaign(false);
+            setShowNewCampaignSuccess(false);
+          }}
+          onSubmit={handleCreateCampaign}
+          prefilledData={discoveryData}
+        />
+      </div>
     );
   }
 
@@ -222,7 +273,7 @@ const Campaigns = () => {
             >
               Workflow Guide
             </Button>
-            <Button onClick={() => setShowCreateCampaign(true)} className="flex items-center gap-2">
+            <Button onClick={() => navigate('/brand-brief')} className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
               Start New Campaign
             </Button>
@@ -322,7 +373,7 @@ const Campaigns = () => {
             </div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">No campaigns yet</h3>
             <p className="text-gray-600 mb-6">Get started by creating your first influencer campaign</p>
-            <Button onClick={() => setShowCreateCampaign(true)}>
+            <Button onClick={() => navigate('/brand-brief')}>
               <Plus className="h-4 w-4 mr-2" />
               Create Your First Campaign
             </Button>

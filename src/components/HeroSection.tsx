@@ -4,10 +4,23 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { AuthModal } from '@/components/AuthModal';
 import { UserDashboard } from '@/components/UserDashboard';
+import { useNavigate } from 'react-router-dom';
+import { Rocket, Users, ArrowRight } from 'lucide-react';
 
 export const HeroSection = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [authModalOpen, setAuthModalOpen] = useState(false);
+
+  const handleCreateCampaign = () => {
+    if (user) {
+      // For authenticated users, check if they have campaigns
+      navigate('/brand-brief');
+    } else {
+      // For guests, go directly to brand brief
+      navigate('/brand-brief');
+    }
+  };
 
   return (
     <>
@@ -35,27 +48,47 @@ export const HeroSection = () => {
           {user ? (
             <UserDashboard />
           ) : (
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-              <Button 
-                size="lg" 
-                onClick={() => setAuthModalOpen(true)}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold px-8 py-4 rounded-full text-lg shadow-lg hover:shadow-xl transition-all duration-300"
-              >
-                Subscribe Now
-              </Button>
-              <Button 
-                variant="outline" 
-                size="lg" 
-                onClick={() => setAuthModalOpen(true)}
-                className="border-2 border-purple-600 text-purple-600 hover:bg-purple-50 font-semibold px-8 py-4 rounded-full text-lg transition-all duration-300"
-              >
-                Sign In
-              </Button>
+            <div className="space-y-8">
+              {/* Primary CTA for new users */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+                <Button 
+                  size="lg" 
+                  onClick={handleCreateCampaign}
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-8 py-4 rounded-full text-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center gap-2"
+                >
+                  <Rocket className="h-5 w-5" />
+                  Create Your First Campaign
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Secondary options */}
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button 
+                  size="lg" 
+                  onClick={() => setAuthModalOpen(true)}
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold px-8 py-4 rounded-full text-lg shadow-lg hover:shadow-xl transition-all duration-300"
+                >
+                  Subscribe Now
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="lg" 
+                  onClick={() => setAuthModalOpen(true)}
+                  className="border-2 border-purple-600 text-purple-600 hover:bg-purple-50 font-semibold px-8 py-4 rounded-full text-lg transition-all duration-300"
+                >
+                  Sign In
+                </Button>
+              </div>
+
+              <p className="text-sm text-gray-500 mt-4">
+                Start for free • No credit card required • Get results in minutes
+              </p>
             </div>
           )}
 
           {/* Top Rated Influencer Section */}
-          <div className="bg-white/70 backdrop-blur-sm rounded-3xl border border-white/20 p-8 shadow-xl max-w-2xl mx-auto">
+          <div className="bg-white/70 backdrop-blur-sm rounded-3xl border border-white/20 p-8 shadow-xl max-w-2xl mx-auto mt-16">
             <h3 className="text-2xl font-bold text-gray-900 mb-6">Top Rated Influencer</h3>
             <div className="flex justify-center items-center space-x-4">
               <div className="flex -space-x-2">

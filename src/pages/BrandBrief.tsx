@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Upload, FileText, Brain, Loader2 } from 'lucide-react';
+import { ArrowLeft, Upload, FileText, Brain, Loader2, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useBrandBriefAnalysis } from '@/hooks/useBrandBriefAnalysis';
 import BriefSummary from '@/components/BriefSummary';
@@ -54,6 +54,17 @@ const BrandBrief = () => {
     }
 
     await analyzeBrief(briefText);
+  };
+
+  const handleProceedToDiscovery = () => {
+    // Pass brief analysis data to Discovery page via navigation state
+    navigate('/discovery', { 
+      state: { 
+        fromBrief: true, 
+        briefAnalysis,
+        influencerRecommendations 
+      } 
+    });
   };
 
   return (
@@ -150,6 +161,26 @@ const BrandBrief = () => {
           {/* Influencer Recommendations */}
           {influencerRecommendations && influencerRecommendations.length > 0 && (
             <InfluencerRecommendations influencers={influencerRecommendations} />
+          )}
+
+          {/* Next Step Button */}
+          {briefAnalysis && (
+            <Card className="bg-white/70 backdrop-blur-sm border border-white/20 shadow-lg rounded-2xl">
+              <CardContent className="p-6 text-center">
+                <h3 className="text-xl font-bold mb-4">Ready to Find Your Perfect Creators?</h3>
+                <p className="text-gray-600 mb-6">
+                  Your brand brief has been analyzed. Now let's discover creators that match your campaign goals.
+                </p>
+                <Button 
+                  onClick={handleProceedToDiscovery}
+                  size="lg"
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+                >
+                  Discover Creators
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>
