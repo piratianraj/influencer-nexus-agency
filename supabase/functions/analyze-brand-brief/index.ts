@@ -3,7 +3,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const geminiApiKey = Deno.env.get('GOOGLE_GEMINI_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
@@ -24,19 +24,16 @@ serve(async (req) => {
     // Create Supabase client
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Step 1: Analyze the brand brief with OpenAI
-    const analysisResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Step 1: Analyze the brand brief with Gemini
+    const analysisResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `You are an expert marketing strategist analyzing brand briefs. Extract key information and provide structured analysis.
+        contents: [{
+          parts: [{
+            text: `You are an expert marketing strategist analyzing brand briefs. Extract key information and provide structured analysis.
 
 Return ONLY valid JSON in this exact format:
 {
@@ -50,19 +47,19 @@ Return ONLY valid JSON in this exact format:
   "key_requirements": ["requirement1", "requirement2"],
   "questions": ["question1", "question2"],
   "summary": "2-3 sentence summary of the brief"
-}`
-          },
-          {
-            role: 'user',
-            content: briefText
-          }
-        ],
-        temperature: 0.3,
+}
+
+Brand brief to analyze: ${briefText}`
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.3,
+        }
       }),
     });
 
     const analysisData = await analysisResponse.json();
-    const analysis = JSON.parse(analysisData.choices[0].message.content);
+    const analysis = JSON.parse(analysisData.candidates[0]?.content?.parts[0]?.text);
     console.log('Brief analysis:', analysis);
 
     // Step 2: Get creators from database
@@ -77,19 +74,16 @@ Return ONLY valid JSON in this exact format:
 
     console.log(`Found ${creators?.length || 0} creators in database`);
 
-    // Step 3: Use OpenAI to match and score creators
-    const matchingResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Step 3: Use Gemini to match and score creators
+    const matchingResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${geminiApiKey}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          {
-            role: 'system',
-            content: `You are an influencer marketing expert. Analyze creators and score their match with the brand brief.
+        contents: [{
+          parts: [{
+            text: `You are an influencer marketing expert. Analyze creators and score their match with the brand brief.
 
 Brand Analysis: ${JSON.stringify(analysis)}
 
@@ -111,19 +105,19 @@ Focus on:
 - Geographic relevance
 - Content style fit
 
-Only include creators with score >= 70. Limit to top 10.`
-          },
-          {
-            role: 'user',
-            content: `Score these creators: ${JSON.stringify(creators?.slice(0, 50) || [])}`
-          }
-        ],
-        temperature: 0.2,
+Only include creators with score >= 70. Limit to top 10.
+
+Score these creators: ${JSON.stringify(creators?.slice(0, 50) || [])}`
+          }]
+        }],
+        generationConfig: {
+          temperature: 0.2,
+        }
       }),
     });
 
     const matchingData = await matchingResponse.json();
-    const matchedCreators = JSON.parse(matchingData.choices[0].message.content);
+    const matchedCreators = JSON.parse(matchingData.candidates[0]?.content?.parts[0]?.text);
     console.log(`AI matched ${matchedCreators.length} creators`);
 
     // Step 4: Build final recommendations
