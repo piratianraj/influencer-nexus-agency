@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      brief_analysis_cache: {
+        Row: {
+          analysis: Json
+          brief_hash: string
+          brief_text: string
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          recommendations: Json
+        }
+        Insert: {
+          analysis: Json
+          brief_hash: string
+          brief_text: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          recommendations: Json
+        }
+        Update: {
+          analysis?: Json
+          brief_hash?: string
+          brief_text?: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          recommendations?: Json
+        }
+        Relationships: []
+      }
       "creator database": {
         Row: {
           collab_status: string | null
@@ -18,6 +48,7 @@ export type Database = {
           engagement_rate: number | null
           followers: number | null
           handle: string | null
+          id: string
           last_active: string | null
           name: string | null
           niche: string | null
@@ -31,6 +62,7 @@ export type Database = {
           engagement_rate?: number | null
           followers?: number | null
           handle?: string | null
+          id?: string
           last_active?: string | null
           name?: string | null
           niche?: string | null
@@ -44,12 +76,48 @@ export type Database = {
           engagement_rate?: number | null
           followers?: number | null
           handle?: string | null
+          id?: string
           last_active?: string | null
           name?: string | null
           niche?: string | null
           platform?: string | null
         }
         Relationships: []
+      }
+      creator_embeddings: {
+        Row: {
+          created_at: string | null
+          creator_id: string
+          embedding: string
+          id: string
+          profile_text: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          creator_id: string
+          embedding: string
+          id?: string
+          profile_text: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          creator_id?: string
+          embedding?: string
+          id?: string
+          profile_text?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creator_embeddings_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creator database"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       guest_users: {
         Row: {
@@ -276,6 +344,22 @@ export type Database = {
       binary_quantize: {
         Args: { "": string } | { "": unknown }
         Returns: unknown
+      }
+      cosine_similarity: {
+        Args: { vec1: string; vec2: string }
+        Returns: number
+      }
+      find_similar_creators: {
+        Args: {
+          query_embedding: string
+          similarity_threshold?: number
+          max_results?: number
+        }
+        Returns: {
+          creator_id: string
+          similarity_score: number
+          profile_text: string
+        }[]
       }
       halfvec_avg: {
         Args: { "": number[] }

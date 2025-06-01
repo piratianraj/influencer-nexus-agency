@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Star, Users, TrendingUp, Mail, Phone } from 'lucide-react';
+import { Star, Users, TrendingUp, Mail, Phone, Zap } from 'lucide-react';
 
 interface InfluencerRecommendation {
   id: string;
@@ -17,6 +17,7 @@ interface InfluencerRecommendation {
   match_score: number;
   match_reasons: string[];
   estimated_rate: number;
+  semantic_similarity?: number;
 }
 
 interface InfluencerRecommendationsProps {
@@ -35,15 +36,22 @@ const InfluencerRecommendations = ({ influencers }: InfluencerRecommendationsPro
     return 'text-gray-600 bg-gray-100';
   };
 
+  const getSemanticSimilarityColor = (score: number) => {
+    if (score >= 85) return 'text-purple-600 bg-purple-100';
+    if (score >= 75) return 'text-indigo-600 bg-indigo-100';
+    if (score >= 65) return 'text-blue-600 bg-blue-100';
+    return 'text-gray-600 bg-gray-100';
+  };
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Star className="h-5 w-5 text-yellow-500" />
-          Recommended Influencers ({influencers.length})
+          RAG-Optimized Recommendations ({influencers.length})
         </CardTitle>
         <CardDescription>
-          AI-selected influencers based on your brand brief analysis
+          AI-selected influencers using vector search and semantic similarity matching
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -67,11 +75,21 @@ const InfluencerRecommendations = ({ influencers }: InfluencerRecommendationsPro
                       <CardDescription className="text-xs">{influencer.username}</CardDescription>
                     </div>
                   </div>
-                  <Badge 
-                    className={`text-xs ${getMatchScoreColor(influencer.match_score)}`}
-                  >
-                    {influencer.match_score}% match
-                  </Badge>
+                  <div className="flex flex-col gap-1">
+                    <Badge 
+                      className={`text-xs ${getMatchScoreColor(influencer.match_score)}`}
+                    >
+                      {influencer.match_score}% match
+                    </Badge>
+                    {influencer.semantic_similarity && (
+                      <Badge 
+                        className={`text-xs ${getSemanticSimilarityColor(influencer.semantic_similarity)}`}
+                      >
+                        <Zap className="h-2 w-2 mr-1" />
+                        {influencer.semantic_similarity}% similar
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -107,7 +125,7 @@ const InfluencerRecommendations = ({ influencers }: InfluencerRecommendationsPro
                 </div>
 
                 <div className="text-xs font-semibold text-green-600">
-                  Est. Rate: ${influencer.estimated_rate}
+                  Est. Rate: ${influencer.estimated_rate.toLocaleString()}
                 </div>
 
                 <div className="flex gap-2">
@@ -124,6 +142,17 @@ const InfluencerRecommendations = ({ influencers }: InfluencerRecommendationsPro
             </Card>
           ))}
         </div>
+        
+        {influencers.length > 0 && (
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+            <div className="flex items-center gap-2 text-blue-800 text-sm">
+              <Zap className="h-4 w-4" />
+              <span className="font-semibold">RAG Optimization Active:</span>
+              These recommendations were generated using vector search for semantic similarity, 
+              reducing analysis time while improving match quality.
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

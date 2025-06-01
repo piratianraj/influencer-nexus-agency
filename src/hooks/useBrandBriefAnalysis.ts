@@ -27,25 +27,86 @@ interface InfluencerRecommendation {
   match_score: number;
   match_reasons: string[];
   estimated_rate: number;
+  semantic_similarity?: number;
+}
+
+interface PerformanceMetrics {
+  total_creators_in_db: number;
+  vector_filtered: number;
+  final_matches: number;
 }
 
 export const useBrandBriefAnalysis = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [briefAnalysis, setBriefAnalysis] = useState<BriefAnalysis | null>(null);
   const [influencerRecommendations, setInfluencerRecommendations] = useState<InfluencerRecommendation[]>([]);
+  const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics | null>(null);
+  const [isGeneratingEmbeddings, setIsGeneratingEmbeddings] = useState(false);
   const { toast } = useToast();
 
-  const analyzeBrief = async (briefText: string) => {
+  const generateCreatorEmbeddings = async () => {
+    setIsGeneratingEmbeddings(true);
+    try {
+      console.log('Generating creator embeddings...');
+      
+      const { data, error } = await supabase.functions.invoke('generate-creator-embeddings');
+
+      if (error) {
+        console.error('Embedding generation error:', error);
+        toast({
+          title: "Embedding Generation Error",
+          description: "Failed to generate creator embeddings. Please try again.",
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      console.log('Embedding generation result:', data);
+      
+      toast({
+        title: "Embeddings Generated",
+        description: `Successfully processed ${data.newEmbeddings} new creators. Total: ${data.totalCreators} creators in database.`,
+      });
+
+      return true;
+    } catch (error) {
+      console.error('Unexpected embedding generation error:', error);
+      toast({
+        title: "Embedding Generation Error",
+        description: "An unexpected error occurred while generating embeddings.",
+        variant: "destructive"
+      });
+      return false;
+    } finally {
+      setIsGeneratingEmbeddings(false);
+    }
+  };
+
+  const analyzeBrief = async (briefText: string, useRAG: boolean = true) => {
     setIsAnalyzing(true);
     try {
-      console.log('Analyzing brand brief:', briefText);
+      console.log('Analyzing brand brief with RAG optimization:', briefText);
       
-      const { data, error } = await supabase.functions.invoke('analyze-brand-brief', {
+      const functionName = useRAG ? 'rag-brand-brief-analysis' : 'analyze-brand-brief';
+      
+      const { data, error } = await supabase.functions.invoke(functionName, {
         body: { briefText }
       });
 
       if (error) {
         console.error('Brief analysis error:', error);
+        
+        // If RAG analysis fails, fallback to original method
+        if (useRAG) {
+          console.log('RAG analysis failed, falling back to original method...');
+          toast({
+            title: "Using Fallback Analysis",
+            description: "RAG optimization unavailable, using standard analysis method.",
+            variant: "default"
+          });
+          return await analyzeBrief(briefText, false);
+        }
+        
         toast({
           title: "Analysis Error",
           description: "Failed to analyze your brand brief. Please try again.",
@@ -64,9 +125,18 @@ export const useBrandBriefAnalysis = () => {
         setInfluencerRecommendations(data.recommendations);
       }
 
+      if (data.performance) {
+        setPerformanceMetrics(data.performance);
+      }
+
+      const recommendationCount = data.recommendations?.length || 0;
+      const cacheStatus = data.cached ? ' (from cache)' : '';
+      const performanceInfo = data.performance ? 
+        ` Processed ${data.performance.vector_filtered} pre-filtered creators from ${data.performance.total_creators_in_db} total.` : '';
+
       toast({
-        title: "Analysis Complete",
-        description: `Found ${data.recommendations?.length || 0} matching influencers`,
+        title: `Analysis Complete${cacheStatus}`,
+        description: `Found ${recommendationCount} high-quality matches.${performanceInfo}`,
       });
 
     } catch (error) {
@@ -83,8 +153,11 @@ export const useBrandBriefAnalysis = () => {
 
   return {
     analyzeBrief,
+    generateCreatorEmbeddings,
     isAnalyzing,
+    isGeneratingEmbeddings,
     briefAnalysis,
-    influencerRecommendations
+    influencerRecommendations,
+    performanceMetrics
   };
 };

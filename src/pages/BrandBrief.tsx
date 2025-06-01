@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Upload, FileText, Brain, Loader2, ArrowRight } from 'lucide-react';
+import { ArrowLeft, Upload, FileText, Brain, Loader2, ArrowRight, Zap, Database } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useBrandBriefAnalysis } from '@/hooks/useBrandBriefAnalysis';
 import BriefSummary from '@/components/BriefSummary';
@@ -16,7 +16,15 @@ const BrandBrief = () => {
   const navigate = useNavigate();
   const [briefText, setBriefText] = useState('');
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
-  const { analyzeBrief, isAnalyzing, briefAnalysis, influencerRecommendations } = useBrandBriefAnalysis();
+  const { 
+    analyzeBrief, 
+    generateCreatorEmbeddings,
+    isAnalyzing, 
+    isGeneratingEmbeddings,
+    briefAnalysis, 
+    influencerRecommendations,
+    performanceMetrics
+  } = useBrandBriefAnalysis();
   const { toast } = useToast();
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,6 +64,10 @@ const BrandBrief = () => {
     await analyzeBrief(briefText);
   };
 
+  const handleGenerateEmbeddings = async () => {
+    await generateCreatorEmbeddings();
+  };
+
   const handleProceedToDiscovery = () => {
     // Pass brief analysis data to Discovery page via navigation state
     navigate('/discovery', { 
@@ -82,15 +94,52 @@ const BrandBrief = () => {
           
           <h1 className="text-4xl font-bold mb-4">
             <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Brand Brief Analysis
+              AI-Powered Brand Brief Analysis
             </span>
           </h1>
           <p className="text-gray-600 text-lg">
-            Upload your brand brief or describe your campaign to get AI-powered influencer recommendations
+            Upload your brand brief to get RAG-optimized influencer recommendations using vector search
           </p>
         </div>
 
         <div className="space-y-6">
+          {/* RAG System Setup */}
+          <Card className="bg-white/70 backdrop-blur-sm border border-white/20 shadow-lg rounded-2xl">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-green-500 to-blue-500 flex items-center justify-center">
+                  <Database className="h-4 w-4 text-white" />
+                </div>
+                RAG System Setup
+              </CardTitle>
+              <CardDescription className="text-gray-600">
+                Optimize the system by generating creator embeddings for faster semantic search
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                onClick={handleGenerateEmbeddings}
+                disabled={isGeneratingEmbeddings}
+                className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+              >
+                {isGeneratingEmbeddings ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Generating Embeddings...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="h-4 w-4 mr-2" />
+                    Setup Vector Search
+                  </>
+                )}
+              </Button>
+              <p className="text-xs text-gray-500 mt-2">
+                This is a one-time setup that will significantly speed up future analyses
+              </p>
+            </CardContent>
+          </Card>
+
           {/* Upload Section */}
           <Card className="bg-white/70 backdrop-blur-sm border border-white/20 shadow-lg rounded-2xl">
             <CardHeader>
@@ -141,17 +190,45 @@ const BrandBrief = () => {
                 {isAnalyzing ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Analyzing Brief...
+                    Analyzing with RAG...
                   </>
                 ) : (
                   <>
                     <Brain className="h-4 w-4 mr-2" />
-                    Analyze Brief & Find Influencers
+                    Analyze with Vector Search
                   </>
                 )}
               </Button>
             </CardContent>
           </Card>
+
+          {/* Performance Metrics */}
+          {performanceMetrics && (
+            <Card className="bg-green-50/70 backdrop-blur-sm border border-green-200/50 shadow-lg rounded-2xl">
+              <CardHeader>
+                <CardTitle className="text-green-800">RAG Performance Metrics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <div className="text-2xl font-bold text-green-600">{performanceMetrics.total_creators_in_db}</div>
+                    <div className="text-sm text-green-700">Total Creators</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-blue-600">{performanceMetrics.vector_filtered}</div>
+                    <div className="text-sm text-blue-700">Pre-filtered by Vector Search</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-purple-600">{performanceMetrics.final_matches}</div>
+                    <div className="text-sm text-purple-700">Final High-Quality Matches</div>
+                  </div>
+                </div>
+                <p className="text-sm text-gray-600 mt-4 text-center">
+                  Vector search reduced processing by {Math.round((1 - performanceMetrics.vector_filtered / performanceMetrics.total_creators_in_db) * 100)}%
+                </p>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Analysis Results */}
           {briefAnalysis && (
@@ -169,14 +246,14 @@ const BrandBrief = () => {
               <CardContent className="p-6 text-center">
                 <h3 className="text-xl font-bold mb-4">Ready to Find Your Perfect Creators?</h3>
                 <p className="text-gray-600 mb-6">
-                  Your brand brief has been analyzed. Now let's discover creators that match your campaign goals.
+                  Your brand brief has been analyzed with RAG optimization. Now let's discover more creators.
                 </p>
                 <Button 
                   onClick={handleProceedToDiscovery}
                   size="lg"
                   className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold px-8 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
                 >
-                  Discover Creators
+                  Discover More Creators
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
               </CardContent>
