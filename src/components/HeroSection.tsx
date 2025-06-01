@@ -11,6 +11,7 @@ export const HeroSection = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
 
   const handleCreateCampaign = () => {
     if (user) {
@@ -20,6 +21,16 @@ export const HeroSection = () => {
       // For guests, go directly to brand brief
       navigate('/brand-brief');
     }
+  };
+
+  const handleSignUp = () => {
+    setAuthMode('signup');
+    setAuthModalOpen(true);
+  };
+
+  const handleSignIn = () => {
+    setAuthMode('login');
+    setAuthModalOpen(true);
   };
 
   return (
@@ -66,7 +77,7 @@ export const HeroSection = () => {
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button 
                   size="lg" 
-                  onClick={() => setAuthModalOpen(true)}
+                  onClick={handleSignUp}
                   className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold px-8 py-4 rounded-full text-lg shadow-lg hover:shadow-xl transition-all duration-300"
                 >
                   Sign Up
@@ -74,7 +85,7 @@ export const HeroSection = () => {
                 <Button 
                   variant="outline" 
                   size="lg" 
-                  onClick={() => setAuthModalOpen(true)}
+                  onClick={handleSignIn}
                   className="border-2 border-purple-600 text-purple-600 hover:bg-purple-50 font-semibold px-8 py-4 rounded-full text-lg transition-all duration-300"
                 >
                   Sign In
@@ -109,7 +120,8 @@ export const HeroSection = () => {
 
       <AuthModal 
         isOpen={authModalOpen} 
-        onClose={() => setAuthModalOpen(false)} 
+        onClose={() => setAuthModalOpen(false)}
+        defaultMode={authMode}
       />
     </>
   );
