@@ -1,218 +1,196 @@
 
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
-
-interface BriefAnalysis {
-  missing: string[];
-  extracted: {
-    budget?: number;
-    timeline?: string;
-    num_creators?: number;
-    follower_range_min?: number;
-    follower_range_max?: number;
-    niche?: string;
-  };
-  prompt?: string;
-}
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Search, Users, Bell, User, CreditCard } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
+import { AuthModal } from '@/components/AuthModal';
+import { UserProfile } from '@/components/UserProfile';
+import { NotificationDropdown } from '@/components/NotificationDropdown';
+import { PaymentSetup } from '@/components/PaymentSetup';
 
 const Index = () => {
-  const [briefText, setBriefText] = useState("");
-  const [analysis, setAnalysis] = useState<BriefAnalysis | null>(null);
-  const [currentAnswer, setCurrentAnswer] = useState("");
-  const [completedBrief, setCompletedBrief] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
-  const navigate = useNavigate();
-
-  const analyzeBrief = async () => {
-    setIsLoading(true);
-    try {
-      // Simulate LLM analysis
-      const mockAnalysis: BriefAnalysis = {
-        missing: ["budget", "timeline", "num_creators"],
-        extracted: {
-          niche: "fitness", // Simulated extraction
-          follower_range_min: 10000,
-          follower_range_max: 100000
-        },
-        prompt: "What budget are you allocating for this campaign? (Please specify in INR)"
-      };
-      
-      setAnalysis(mockAnalysis);
-      toast({
-        title: "Brief analyzed",
-        description: "Please answer the missing information to proceed."
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to analyze brief. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const submitAnswer = () => {
-    if (!analysis || !currentAnswer.trim()) return;
-
-    const updatedAnalysis = { ...analysis };
-    const currentMissing = updatedAnalysis.missing[0];
-    
-    // Store the answer
-    if (currentMissing === "budget") {
-      updatedAnalysis.extracted.budget = parseInt(currentAnswer.replace(/[^\d]/g, ""));
-    } else if (currentMissing === "timeline") {
-      updatedAnalysis.extracted.timeline = currentAnswer;
-    } else if (currentMissing === "num_creators") {
-      updatedAnalysis.extracted.num_creators = parseInt(currentAnswer);
-    }
-
-    // Remove the answered question
-    updatedAnalysis.missing = updatedAnalysis.missing.slice(1);
-
-    // Set next prompt
-    if (updatedAnalysis.missing.length > 0) {
-      const nextMissing = updatedAnalysis.missing[0];
-      if (nextMissing === "timeline") {
-        updatedAnalysis.prompt = "What is your campaign timeline? (e.g., '1 Aug 2025 - 31 Aug 2025')";
-      } else if (nextMissing === "num_creators") {
-        updatedAnalysis.prompt = "How many creators do you want to work with?";
-      }
-    }
-
-    if (updatedAnalysis.missing.length === 0) {
-      // All fields complete - create final brief
-      const finalBrief = {
-        brief_id: `brief_${Date.now()}`,
-        brand_name: "Sample Agency",
-        raw_text: briefText,
-        ...updatedAnalysis.extracted,
-        platforms: ["Instagram", "YouTube"],
-        geography: "India",
-        created_at: new Date().toISOString()
-      };
-      
-      setCompletedBrief(finalBrief);
-      localStorage.setItem('currentBrief', JSON.stringify(finalBrief));
-      
-      toast({
-        title: "Brief completed!",
-        description: "Redirecting to creator discovery..."
-      });
-      
-      setTimeout(() => navigate('/discovery'), 1500);
-    } else {
-      setAnalysis(updatedAnalysis);
-    }
-    
-    setCurrentAnswer("");
-  };
+  const { user, logout } = useAuth();
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Influencer Marketing Platform</h1>
-          <p className="text-xl text-gray-600">Streamline your influencer discovery and outreach</p>
-        </div>
-
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Upload Brand Brief</CardTitle>
-            <CardDescription>
-              Paste your campaign brief below. Our AI will extract key information and ask for any missing details.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="brief">Campaign Brief</Label>
-              <Textarea
-                id="brief"
-                placeholder="Paste your brand brief here... Include details about your campaign goals, target audience, budget, timeline, etc."
-                value={briefText}
-                onChange={(e) => setBriefText(e.target.value)}
-                rows={6}
-                className="mt-2"
-              />
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-4">
+              <h1 className="text-2xl font-bold text-gray-900">InfluencerHub</h1>
             </div>
             
-            <Button 
-              onClick={analyzeBrief} 
-              disabled={!briefText.trim() || isLoading}
-              className="w-full"
-            >
-              {isLoading ? "Analyzing..." : "Analyze Brief"}
-            </Button>
-          </CardContent>
-        </Card>
+            <nav className="hidden md:flex space-x-8">
+              <Link to="/" className="text-gray-700 hover:text-blue-600 font-medium">Home</Link>
+              <Link to="/discovery" className="text-gray-700 hover:text-blue-600 font-medium">Discovery</Link>
+              <Link to="/analytics" className="text-gray-700 hover:text-blue-600 font-medium">Analytics</Link>
+            </nav>
 
-        {analysis && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle>Complete Your Brief</CardTitle>
-              <CardDescription>
-                We've extracted some information, but need a few more details.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Show extracted information */}
-              <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-                <div>
-                  <span className="font-medium">Extracted Niche:</span>
-                  <span className="ml-2">{analysis.extracted.niche || "Not detected"}</span>
-                </div>
-                <div>
-                  <span className="font-medium">Follower Range:</span>
-                  <span className="ml-2">
-                    {analysis.extracted.follower_range_min?.toLocaleString()} - {analysis.extracted.follower_range_max?.toLocaleString()}
-                  </span>
-                </div>
-              </div>
-
-              {analysis.missing.length > 0 && (
-                <div className="space-y-3">
-                  <Label className="text-base font-medium">{analysis.prompt}</Label>
-                  <Input
-                    value={currentAnswer}
-                    onChange={(e) => setCurrentAnswer(e.target.value)}
-                    placeholder="Enter your answer..."
-                  />
-                  <Button onClick={submitAnswer} disabled={!currentAnswer.trim()}>
-                    Submit Answer ({analysis.missing.length} questions remaining)
+            <div className="flex items-center space-x-4">
+              {user ? (
+                <>
+                  <NotificationDropdown />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setPaymentModalOpen(true)}
+                  >
+                    <CreditCard className="h-5 w-5" />
                   </Button>
-                </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setProfileModalOpen(true)}
+                  >
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={user.avatar} />
+                      <AvatarFallback>{user.name.charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                  </Button>
+                  <Button variant="outline" onClick={logout} size="sm">
+                    Sign Out
+                  </Button>
+                </>
+              ) : (
+                <Button onClick={() => setAuthModalOpen(true)}>
+                  Sign In
+                </Button>
               )}
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          </div>
+        </div>
+      </header>
 
-        {completedBrief && (
-          <Card className="border-green-200 bg-green-50">
-            <CardHeader>
-              <CardTitle className="text-green-800">Brief Completed! ✓</CardTitle>
-              <CardDescription className="text-green-700">
-                All information collected. Redirecting to creator discovery...
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div><strong>Budget:</strong> ₹{completedBrief.budget?.toLocaleString()}</div>
-                <div><strong>Timeline:</strong> {completedBrief.timeline}</div>
-                <div><strong>Creators Needed:</strong> {completedBrief.num_creators}</div>
-                <div><strong>Niche:</strong> {completedBrief.niche}</div>
+      {/* Hero Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto text-center">
+          <h1 className="text-5xl font-bold text-gray-900 mb-6">
+            Connect Brands with 
+            <span className="text-blue-600"> Influencers</span>
+          </h1>
+          <p className="text-xl text-gray-600 mb-8">
+            Streamline your influencer marketing campaigns with our comprehensive platform
+          </p>
+          
+          {user ? (
+            <div className="bg-white p-6 rounded-lg shadow-sm border mb-8">
+              <h3 className="text-lg font-semibold mb-4">Welcome back, {user.name}!</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Link to="/discovery">
+                  <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                    <CardContent className="p-4 text-center">
+                      <Search className="h-8 w-8 mx-auto mb-2 text-blue-600" />
+                      <h4 className="font-semibold">Find Creators</h4>
+                      <p className="text-sm text-gray-600">Discover perfect influencers</p>
+                    </CardContent>
+                  </Card>
+                </Link>
+                
+                <Link to="/analytics">
+                  <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                    <CardContent className="p-4 text-center">
+                      <Users className="h-8 w-8 mx-auto mb-2 text-green-600" />
+                      <h4 className="font-semibold">Campaign Analytics</h4>
+                      <p className="text-sm text-gray-600">Track performance</p>
+                    </CardContent>
+                  </Card>
+                </Link>
+                
+                <Card 
+                  className="hover:shadow-md transition-shadow cursor-pointer"
+                  onClick={() => setPaymentModalOpen(true)}
+                >
+                  <CardContent className="p-4 text-center">
+                    <CreditCard className="h-8 w-8 mx-auto mb-2 text-purple-600" />
+                    <h4 className="font-semibold">Payments</h4>
+                    <p className="text-sm text-gray-600">Manage transactions</p>
+                  </CardContent>
+                </Card>
               </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+            </div>
+          ) : (
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button size="lg" onClick={() => setAuthModalOpen(true)}>
+                Get Started Free
+              </Button>
+              <Button variant="outline" size="lg" onClick={() => setAuthModalOpen(true)}>
+                Sign In
+              </Button>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl font-bold text-center mb-12">Platform Features</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            <Card>
+              <CardHeader>
+                <Search className="h-10 w-10 text-blue-600 mb-2" />
+                <CardTitle>Advanced Search</CardTitle>
+                <CardDescription>
+                  Find creators with detailed filters for platform, followers, engagement, and more
+                </CardDescription>
+              </CardHeader>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <Users className="h-10 w-10 text-green-600 mb-2" />
+                <CardTitle>Campaign Management</CardTitle>
+                <CardDescription>
+                  Track all your campaigns from outreach to completion with real-time updates
+                </CardDescription>
+              </CardHeader>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <Bell className="h-10 w-10 text-purple-600 mb-2" />
+                <CardTitle>Smart Notifications</CardTitle>
+                <CardDescription>
+                  Stay updated with real-time notifications for applications, payments, and more
+                </CardDescription>
+              </CardHeader>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CreditCard className="h-10 w-10 text-orange-600 mb-2" />
+                <CardTitle>Secure Payments</CardTitle>
+                <CardDescription>
+                  Process payments securely with built-in escrow and automated disbursements
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </div>
+        </div>
+      </section>
+
+      {/* Modals */}
+      <AuthModal 
+        isOpen={authModalOpen} 
+        onClose={() => setAuthModalOpen(false)} 
+      />
+      <UserProfile 
+        isOpen={profileModalOpen} 
+        onClose={() => setProfileModalOpen(false)} 
+      />
+      <PaymentSetup 
+        isOpen={paymentModalOpen} 
+        onClose={() => setPaymentModalOpen(false)} 
+      />
     </div>
   );
 };
