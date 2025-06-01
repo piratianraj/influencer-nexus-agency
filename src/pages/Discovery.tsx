@@ -6,6 +6,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import OutreachModal from "@/components/OutreachModal";
 import NegotiationSummary from "@/components/NegotiationSummary";
+import ContractModal from "@/components/ContractModal";
+import InvoiceModal from "@/components/InvoiceModal";
 
 interface Creator {
   id: string;
@@ -53,6 +55,16 @@ const Discovery = () => {
     type: "email" | "call";
   }>({ isOpen: false, creator: null, type: "email" });
   const [negotiations, setNegotiations] = useState<Record<string, any>>({});
+  const [contracts, setContracts] = useState<Record<string, "none" | "unsigned" | "signed">>({});
+  const [invoices, setInvoices] = useState<Record<string, "none" | "unpaid" | "paid">>({});
+  const [contractModal, setContractModal] = useState<{
+    isOpen: boolean;
+    creatorId: string | null;
+  }>({ isOpen: false, creatorId: null });
+  const [invoiceModal, setInvoiceModal] = useState<{
+    isOpen: boolean;
+    creatorId: string | null;
+  }>({ isOpen: false, creatorId: null });
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -248,6 +260,48 @@ const Discovery = () => {
     }));
   };
 
+  const handleOpenContract = (creatorId: string) => {
+    setContractModal({
+      isOpen: true,
+      creatorId
+    });
+  };
+
+  const handleCloseContract = () => {
+    setContractModal({
+      isOpen: false,
+      creatorId: null
+    });
+  };
+
+  const handleContractStatusChange = (creatorId: string, status: "unsigned" | "signed") => {
+    setContracts(prev => ({
+      ...prev,
+      [creatorId]: status
+    }));
+  };
+
+  const handleOpenInvoice = (creatorId: string) => {
+    setInvoiceModal({
+      isOpen: true,
+      creatorId
+    });
+  };
+
+  const handleCloseInvoice = () => {
+    setInvoiceModal({
+      isOpen: false,
+      creatorId: null
+    });
+  };
+
+  const handleInvoiceStatusChange = (creatorId: string, status: "unpaid" | "paid") => {
+    setInvoices(prev => ({
+      ...prev,
+      [creatorId]: status
+    }));
+  };
+
   const getCreatorStatus = (creatorId: string) => {
     const negotiation = negotiations[creatorId];
     if (!negotiation) return "Not Contacted";
@@ -309,6 +363,8 @@ const Discovery = () => {
             const isExpanded = expandedCreator === creator.id;
             const negotiation = negotiations[creator.id];
             const status = getCreatorStatus(creator.id);
+            const contractStatus = contracts[creator.id] || "none";
+            const invoiceStatus = invoices[creator.id] || "none";
             
             return (
               <Card key={creator.id} className="hover:shadow-lg transition-shadow">
@@ -396,7 +452,10 @@ const Discovery = () => {
                     <NegotiationSummary
                       negotiation={negotiation}
                       creatorName={creator.name}
-                      onGenerateContract={() => handleGenerateContract(creator.id)}
+                      onOpenContract={() => handleOpenContract(creator.id)}
+                      onOpenInvoice={() => handleOpenInvoice(creator.id)}
+                      contractStatus={contractStatus}
+                      invoiceStatus={invoiceStatus}
                     />
                   )}
 
@@ -436,6 +495,41 @@ const Discovery = () => {
           </div>
         )}
       </div>
+
+      {/* Contract Modal */}
+      {contractModal.creatorId && (
+        <ContractModal
+          isOpen={contractModal.isOpen}
+          onClose={handleCloseContract}
+          creatorName={creators.find(c => c.id === contractModal.creatorId)?.name || ""}
+          negotiationData={negotiations[contractModal.creatorId]}
+          contractStatus={contracts[contractModal.creatorId] || "none"}
+          onStatusChange={(status) => handleContractStatusChange(contractModal.creatorId!, status)}
+        />
+      )}
+
+      {/* Invoice Modal */}
+      {invoiceModal.creatorId && (
+        <InvoiceModal
+          isOpen={invoiceModal.isOpen}
+          onClose={handleCloseInvoice}
+          creatorName={creators.find(c => c.id === invoiceModal.creatorId)?.name || ""}
+          negotiationData={negotiations[invoiceModal.creatorId]}
+          invoiceStatus={invoices[invoiceModal.creatorId] || "none"}
+          onStatusChange={(status) => handleInvoiceStatusChange(invoiceModal.creatorId!, status)}
+          contractSigned={contracts[invoiceModal.creatorId] === "signed"}
+        />
+      )}
+
+      {/* OutreachModal */}
+      {outreachModal.isOpen && (
+        <OutreachModal
+          isOpen={outreachModal.isOpen}
+          onClose={handleCloseOutreach}
+          creator={outreachModal.creator}
+          type={outreachModal.type}
+        />
+      )}
     </div>
   );
 };

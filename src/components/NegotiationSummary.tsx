@@ -17,10 +17,20 @@ interface NegotiationData {
 interface NegotiationSummaryProps {
   negotiation: NegotiationData;
   creatorName: string;
-  onGenerateContract: () => void;
+  onOpenContract: () => void;
+  onOpenInvoice: () => void;
+  contractStatus: "none" | "unsigned" | "signed";
+  invoiceStatus: "none" | "unpaid" | "paid";
 }
 
-const NegotiationSummary = ({ negotiation, creatorName, onGenerateContract }: NegotiationSummaryProps) => {
+const NegotiationSummary = ({ 
+  negotiation, 
+  creatorName, 
+  onOpenContract, 
+  onOpenInvoice,
+  contractStatus,
+  invoiceStatus 
+}: NegotiationSummaryProps) => {
   return (
     <Card className="mt-4 border-green-200 bg-green-50">
       <CardHeader>
@@ -59,9 +69,40 @@ const NegotiationSummary = ({ negotiation, creatorName, onGenerateContract }: Ne
           <p className="text-sm text-gray-700">{negotiation.parsed_summary}</p>
         </div>
 
+        {/* Contract & Invoice Status */}
+        <div className="flex space-x-4 text-sm">
+          <div className="flex items-center space-x-2">
+            <span className="font-medium">Contract:</span>
+            <Badge variant={
+              contractStatus === "signed" ? "default" : 
+              contractStatus === "unsigned" ? "secondary" : "outline"
+            }>
+              {contractStatus === "signed" ? "Signed" : 
+               contractStatus === "unsigned" ? "Unsigned" : "Not Generated"}
+            </Badge>
+          </div>
+          <div className="flex items-center space-x-2">
+            <span className="font-medium">Invoice:</span>
+            <Badge variant={
+              invoiceStatus === "paid" ? "default" : 
+              invoiceStatus === "unpaid" ? "secondary" : "outline"
+            }>
+              {invoiceStatus === "paid" ? "Paid" : 
+               invoiceStatus === "unpaid" ? "Unpaid" : "Not Generated"}
+            </Badge>
+          </div>
+        </div>
+
         <div className="flex space-x-3">
-          <Button onClick={onGenerateContract} variant="default">
-            Generate Contract
+          <Button onClick={onOpenContract} variant="default">
+            {contractStatus === "none" ? "Generate Contract" : "Manage Contract"}
+          </Button>
+          <Button 
+            onClick={onOpenInvoice} 
+            variant="secondary"
+            disabled={contractStatus !== "signed"}
+          >
+            {invoiceStatus === "none" ? "Generate Invoice" : "Manage Invoice"}
           </Button>
           {negotiation.follow_up_flag && (
             <Badge variant="outline" className="px-3 py-1">
