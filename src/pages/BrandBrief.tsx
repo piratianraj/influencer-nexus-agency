@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -56,33 +57,39 @@ const BrandBrief = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <Button 
             variant="ghost" 
             onClick={() => navigate(-1)}
-            className="mb-4 flex items-center gap-2"
+            className="mb-4 flex items-center gap-2 hover:bg-white/50 rounded-xl"
           >
             <ArrowLeft className="h-4 w-4" />
             Back
           </Button>
           
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Brand Brief Analysis</h1>
-          <p className="text-gray-600">
+          <h1 className="text-4xl font-bold mb-4">
+            <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+              Brand Brief Analysis
+            </span>
+          </h1>
+          <p className="text-gray-600 text-lg">
             Upload your brand brief or describe your campaign to get AI-powered influencer recommendations
           </p>
         </div>
 
         <div className="space-y-6">
           {/* Upload Section */}
-          <Card>
+          <Card className="bg-white/70 backdrop-blur-sm border border-white/20 shadow-lg rounded-2xl">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
+                  <FileText className="h-4 w-4 text-white" />
+                </div>
                 Brand Brief Input
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-gray-600">
                 Upload a document or type your brand brief directly
               </CardDescription>
             </CardHeader>
@@ -118,7 +125,7 @@ const BrandBrief = () => {
               <Button 
                 onClick={handleAnalyzeBrief}
                 disabled={isAnalyzing || !briefText.trim()}
-                className="w-full"
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
               >
                 {isAnalyzing ? (
                   <>

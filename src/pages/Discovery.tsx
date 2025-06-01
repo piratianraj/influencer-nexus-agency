@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -130,7 +131,7 @@ const Discovery = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50">
       <DiscoveryHeader />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -138,13 +139,17 @@ const Discovery = () => {
           <Button 
             variant="ghost" 
             onClick={() => navigate(-1)}
-            className="mb-4 flex items-center gap-2"
+            className="mb-4 flex items-center gap-2 hover:bg-white/50 rounded-xl"
           >
             <ArrowLeft className="h-4 w-4" />
             Back
           </Button>
           
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Discover Creators</h1>
+          <h1 className="text-4xl font-bold mb-4">
+            <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+              Discover Creators
+            </span>
+          </h1>
           
           <SearchAndFilters
             searchTerm={searchTerm}
@@ -160,17 +165,19 @@ const Discovery = () => {
         <div className="flex gap-8">
           {showFilters && (
             <div className="w-80 flex-shrink-0">
-              <AdvancedFilters
-                filters={filters}
-                onFiltersChange={setFilters}
-                onReset={resetFilters}
-              />
+              <div className="bg-white/70 backdrop-blur-sm rounded-2xl border border-white/20 shadow-lg">
+                <AdvancedFilters
+                  filters={filters}
+                  onFiltersChange={setFilters}
+                  onReset={resetFilters}
+                />
+              </div>
             </div>
           )}
 
           <div className="flex-1">
             <div className="mb-4 flex justify-between items-center">
-              <p className="text-gray-600">
+              <p className="text-gray-600 font-medium">
                 {filteredCreators.length} creator{filteredCreators.length !== 1 ? 's' : ''} found
               </p>
             </div>
