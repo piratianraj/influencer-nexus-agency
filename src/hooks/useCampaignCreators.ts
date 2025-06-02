@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -52,7 +53,7 @@ export const useCampaignCreators = (campaignId?: string) => {
         .select(`
           *,
           campaigns!inner(user_id),
-          creator_database!creator_id(
+          creator_database!creator_database_id_fkey(
             name,
             handle,
             email,
