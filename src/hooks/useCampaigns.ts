@@ -30,7 +30,7 @@ export const useCampaigns = () => {
 
   const getMockCampaigns = (): Campaign[] => [
     {
-      id: 'mock-1',
+      id: '2c11ad40-bc05-4e1d-b485-10d91ab6ab57',
       name: 'Summer Fashion Launch',
       description: 'Promoting our new summer collection with fashion influencers',
       status: 'active',
