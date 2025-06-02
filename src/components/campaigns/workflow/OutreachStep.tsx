@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 
 interface OutreachStepProps {
   campaignCreators: CampaignCreator[];
-  onUpdateCreator: (id: string, updates: Partial<CampaignCreator>) => Promise<void>;
+  onUpdateCreator: (id: string, updates: Partial<CampaignCreator>) => Promise<CampaignCreator | null>;
 }
 
 export const OutreachStep: React.FC<OutreachStepProps> = ({ campaignCreators, onUpdateCreator }) => {

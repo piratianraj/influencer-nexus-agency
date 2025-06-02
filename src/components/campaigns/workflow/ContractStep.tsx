@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 
 interface ContractStepProps {
   campaignCreators: CampaignCreator[];
-  onUpdateCreator: (id: string, updates: Partial<CampaignCreator>) => Promise<void>;
+  onUpdateCreator: (id: string, updates: Partial<CampaignCreator>) => Promise<CampaignCreator | null>;
 }
 
 export const ContractStep: React.FC<ContractStepProps> = ({ campaignCreators, onUpdateCreator }) => {
