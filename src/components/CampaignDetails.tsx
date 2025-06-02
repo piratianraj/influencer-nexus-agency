@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,22 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { ArrowLeft, Users, TrendingUp, DollarSign, Eye, Heart, Share, BarChart3, Trash2 } from 'lucide-react';
 import { EnhancedWorkflowGuide } from '@/components/EnhancedWorkflowGuide';
-
-interface Campaign {
-  id: string;
-  name: string;
-  description: string;
-  status: 'draft' | 'active' | 'paused' | 'completed' | 'cancelled';
-  budget: number;
-  total_spend: number;
-  total_reach: number;
-  total_impressions: number;
-  total_engagement: number;
-  start_date: string;
-  end_date: string;
-  influencer_count: number;
-  workflow_step?: string;
-}
+import { Campaign } from '@/hooks/useCampaigns';
 
 interface Influencer {
   id: string;
