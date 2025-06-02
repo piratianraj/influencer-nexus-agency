@@ -151,6 +151,16 @@ const Campaigns = () => {
     }
   };
 
+  const handleWorkflowUpdate = async (campaignId: string, step: string) => {
+    const success = await updateCampaign(campaignId, { workflow_step: step });
+    if (success) {
+      toast({
+        title: "Workflow Updated",
+        description: `Campaign workflow moved to ${step}`,
+      });
+    }
+  };
+
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -210,6 +220,7 @@ const Campaigns = () => {
           onViewReport={() => setShowReport(true)}
           onEdit={() => handleEditCampaign(selectedCampaign)}
           onDelete={handleDeleteCampaign}
+          onWorkflowUpdate={handleWorkflowUpdate}
         />
       </div>
     );

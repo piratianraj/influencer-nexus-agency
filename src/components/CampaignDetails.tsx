@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Progress } from '@/components/ui/progress';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { ArrowLeft, Users, TrendingUp, DollarSign, Eye, Heart, Share, BarChart3, Trash2 } from 'lucide-react';
-import { WorkflowGuide } from '@/components/WorkflowGuide';
+import { EnhancedWorkflowGuide } from '@/components/EnhancedWorkflowGuide';
 
 interface Campaign {
   id: string;
@@ -41,6 +42,7 @@ interface CampaignDetailsProps {
   onViewReport?: () => void;
   onEdit?: () => void;
   onDelete?: (campaignId: string) => void;
+  onWorkflowUpdate?: (campaignId: string, step: string) => void;
 }
 
 // Mock influencer data
@@ -98,7 +100,8 @@ export const CampaignDetails: React.FC<CampaignDetailsProps> = ({
   onBack, 
   onViewReport, 
   onEdit,
-  onDelete
+  onDelete,
+  onWorkflowUpdate
 }) => {
   const influencers = mockInfluencers[campaign.id] || [];
 
@@ -134,10 +137,10 @@ export const CampaignDetails: React.FC<CampaignDetailsProps> = ({
     return num.toString();
   };
 
-  const getWorkflowProgress = (step: string) => {
-    const steps = ['campaign-creation', 'creator-search', 'outreach', 'deal-negotiation', 'contract', 'payment', 'report'];
-    const currentIndex = steps.indexOf(step);
-    return ((currentIndex + 1) / steps.length) * 100;
+  const handleWorkflowStepUpdate = (stepId: string) => {
+    if (onWorkflowUpdate) {
+      onWorkflowUpdate(campaign.id, stepId);
+    }
   };
 
   return (
@@ -205,17 +208,22 @@ export const CampaignDetails: React.FC<CampaignDetailsProps> = ({
           </div>
         </div>
 
-        {/* Workflow Progress */}
+        {/* Enhanced Workflow Progress */}
         {campaign.workflow_step && (
           <Card className="mb-8">
             <CardHeader>
               <CardTitle className="text-lg">Campaign Workflow Progress</CardTitle>
               <CardDescription>
-                Track your campaign progress through each stage
+                Track your campaign progress through each stage with interactive controls
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <WorkflowGuide currentStep={campaign.workflow_step} onEdit={onEdit} />
+              <EnhancedWorkflowGuide 
+                campaignId={campaign.id}
+                currentStep={campaign.workflow_step} 
+                onStepUpdate={handleWorkflowStepUpdate}
+                onEdit={onEdit} 
+              />
             </CardContent>
           </Card>
         )}
@@ -298,7 +306,6 @@ export const CampaignDetails: React.FC<CampaignDetailsProps> = ({
           </CardContent>
         </Card>
 
-        {/* Influencers Table */}
         <Card>
           <CardHeader>
             <CardTitle>Campaign Influencers</CardTitle>
