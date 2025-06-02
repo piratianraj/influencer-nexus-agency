@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Plus, CheckCircle, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,6 +12,7 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import { useCreatorData } from '@/hooks/useCreatorData';
 import { useCreatorFilters } from '@/hooks/useCreatorFilters';
 import { useDiscoveryState } from '@/hooks/useDiscoveryState';
+import { useCampaignCreators } from '@/hooks/useCampaignCreators';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -43,6 +43,7 @@ const Discovery = () => {
 
   const { creators, loading, refetch, page, setPage, pageSize } = useCreatorData();
   const { applyFilters, applySearch } = useCreatorFilters();
+  const { addCreatorToCampaign } = useCampaignCreators(campaignId || undefined);
   const {
     state,
     updateState,
@@ -139,7 +140,7 @@ const Discovery = () => {
     });
   };
 
-  const handleAddToCampaign = () => {
+  const handleAddToCampaign = async () => {
     if (selectedCreators.length === 0) {
       toast({
         title: "No Creators Selected",
@@ -149,22 +150,38 @@ const Discovery = () => {
       return;
     }
 
-    // TODO: Add logic to add creators to the existing campaign
-    // This would typically involve calling an API to add the creators to the campaign
-    console.log(`Adding ${selectedCreators.length} creators to campaign ${campaignId}`);
-    
-    toast({
-      title: "Creators Added",
-      description: `${selectedCreators.length} creator${selectedCreators.length !== 1 ? 's' : ''} added to campaign successfully.`,
-    });
+    if (!campaignId || !addCreatorToCampaign) {
+      toast({
+        title: "Error",
+        description: "Campaign ID not found.",
+        variant: "destructive"
+      });
+      return;
+    }
 
-    // Navigate back to the campaign details
-    navigate(`/campaigns`, { 
-      state: { 
-        selectedCampaignId: campaignId,
-        addedCreators: selectedCreators 
-      } 
-    });
+    try {
+      // Add each selected creator to the campaign
+      const addPromises = selectedCreators.map(creatorId => 
+        addCreatorToCampaign(creatorId, campaignId)
+      );
+      
+      await Promise.all(addPromises);
+
+      toast({
+        title: "Creators Added",
+        description: `${selectedCreators.length} creator${selectedCreators.length !== 1 ? 's' : ''} added to campaign successfully.`,
+      });
+
+      // Navigate back to the specific campaign details page
+      navigate(`/campaigns/${campaignId}`);
+    } catch (error) {
+      console.error('Error adding creators to campaign:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add creators to campaign. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   // Apply search first, then filters
@@ -195,11 +212,17 @@ const Discovery = () => {
         <div className="mb-8">
           <Button 
             variant="ghost" 
-            onClick={() => navigate(-1)}
+            onClick={() => {
+              if (isAddingToCampaign && campaignId) {
+                navigate(`/campaigns/${campaignId}`);
+              } else {
+                navigate(-1);
+              }
+            }}
             className="mb-4 flex items-center gap-2 hover:bg-white/50 rounded-xl"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back
+            Back{isAddingToCampaign ? ' to Campaign' : ''}
           </Button>
           
           <div className="flex justify-between items-start mb-6">
