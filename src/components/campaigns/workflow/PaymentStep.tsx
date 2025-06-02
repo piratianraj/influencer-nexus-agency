@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { CreditCard, DollarSign, Calendar } from 'lucide-react';
 import { CampaignCreator } from '@/hooks/useCampaignCreators';
 import { useToast } from '@/hooks/use-toast';
@@ -32,7 +33,7 @@ export const PaymentStep: React.FC<PaymentStepProps> = ({ campaignCreators, onUp
     
     toast({
       title: "Payment Status Updated",
-      description: `Payment status updated to ${status} for ${creator.creator_id}`,
+      description: `Payment status updated to ${status} for ${creator.name || creator.creator_id}`,
     });
   };
 
@@ -58,7 +59,7 @@ Invoice #: INV-${Date.now()}
 Date: ${new Date().toLocaleDateString()}
 
 Bill To:
-${creator.creator_id}
+${creator.name || creator.creator_id}
 
 Description: Content Creation Services
 Campaign: Brand Campaign
@@ -77,7 +78,7 @@ This is a MOCK INVOICE for demonstration purposes only.
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `Invoice_${creator.creator_id.replace(/\s+/g, '_')}_${Date.now()}.txt`;
+    link.download = `Invoice_${(creator.name || creator.creator_id).replace(/\s+/g, '_')}_${Date.now()}.txt`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -85,7 +86,7 @@ This is a MOCK INVOICE for demonstration purposes only.
 
     toast({
       title: "Invoice Generated",
-      description: `Invoice created and downloaded for ${creator.creator_id}`,
+      description: `Invoice created and downloaded for ${creator.name || creator.creator_id}`,
     });
   };
 
@@ -102,9 +103,16 @@ This is a MOCK INVOICE for demonstration purposes only.
           {campaignCreators.filter(creator => creator.contract_signed).map((creator) => (
             <div key={creator.id} className="flex items-center justify-between p-4 border rounded-lg">
               <div className="flex items-center gap-3">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={creator.avatar} alt={creator.name} />
+                  <AvatarFallback>{creator.name?.split(' ').map(n => n[0]).join('') || 'C'}</AvatarFallback>
+                </Avatar>
                 <div>
-                  <h4 className="font-medium">{creator.creator_id}</h4>
+                  <h4 className="font-medium">{creator.name || creator.creator_id}</h4>
                   <div className="flex items-center gap-4 text-sm text-gray-500">
+                    {creator.platform && (
+                      <Badge variant="outline" className="text-xs">{creator.platform}</Badge>
+                    )}
                     <div className="flex items-center gap-1">
                       <DollarSign className="h-3 w-3" />
                       ${creator.agreed_rate?.toLocaleString()}
@@ -139,14 +147,14 @@ This is a MOCK INVOICE for demonstration purposes only.
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Payment for {creator.creator_id}</DialogTitle>
+                      <DialogTitle>Payment for {creator.name || creator.creator_id}</DialogTitle>
                     </DialogHeader>
                     
                     <div className="space-y-4">
                       <div className="p-4 bg-gray-50 rounded-lg">
                         <h4 className="font-medium mb-2">Payment Details</h4>
                         <div className="text-sm space-y-1">
-                          <div>Creator: {creator.creator_id}</div>
+                          <div>Creator: {creator.name || creator.creator_id}</div>
                           <div>Amount: ${creator.agreed_rate?.toLocaleString()}</div>
                           <div>Status: {creator.payment_status}</div>
                         </div>

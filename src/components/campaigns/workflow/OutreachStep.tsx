@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Mail, Phone, MessageSquare, Clock } from 'lucide-react';
 import { CampaignCreator } from '@/hooks/useCampaignCreators';
 import { useToast } from '@/hooks/use-toast';
@@ -25,15 +26,15 @@ export const OutreachStep: React.FC<OutreachStepProps> = ({ campaignCreators, on
   const handleOutreach = async (creator: CampaignCreator, method: 'email' | 'call') => {
     if (method === 'email') {
       const subject = `Collaboration Opportunity - Campaign`;
-      const body = message || `Hi ${creator.creator_id},\n\nWe'd love to collaborate with you on our upcoming campaign. Are you interested in discussing this opportunity?\n\nBest regards,\nYour Brand Team`;
+      const body = message || `Hi ${creator.name || creator.creator_id},\n\nWe'd love to collaborate with you on our upcoming campaign. Are you interested in discussing this opportunity?\n\nBest regards,\nYour Brand Team`;
       
-      const mailtoLink = `mailto:${creator.creator_id}@example.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      const mailtoLink = `mailto:${creator.email || creator.creator_id + '@example.com'}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
       window.open(mailtoLink, '_blank');
     } else {
       // For call functionality - would integrate with Twilio in production
       toast({
         title: "Call Initiated",
-        description: `Call functionality would dial ${creator.creator_id} here`,
+        description: `Call functionality would dial ${creator.name || creator.creator_id} here`,
       });
     }
 
@@ -49,7 +50,7 @@ export const OutreachStep: React.FC<OutreachStepProps> = ({ campaignCreators, on
     
     toast({
       title: "Outreach Sent",
-      description: `${method === 'email' ? 'Email' : 'Call'} initiated for ${creator.creator_id}`,
+      description: `${method === 'email' ? 'Email' : 'Call'} initiated for ${creator.name || creator.creator_id}`,
     });
   };
 
@@ -83,9 +84,16 @@ export const OutreachStep: React.FC<OutreachStepProps> = ({ campaignCreators, on
           {campaignCreators.map((creator) => (
             <div key={creator.id} className="flex items-center justify-between p-4 border rounded-lg">
               <div className="flex items-center gap-3">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={creator.avatar} alt={creator.name} />
+                  <AvatarFallback>{creator.name?.split(' ').map(n => n[0]).join('') || 'C'}</AvatarFallback>
+                </Avatar>
                 <div>
-                  <h4 className="font-medium">{creator.creator_id}</h4>
+                  <h4 className="font-medium">{creator.name || creator.creator_id}</h4>
                   <div className="flex items-center gap-2 text-sm text-gray-500">
+                    {creator.platform && (
+                      <Badge variant="outline" className="text-xs">{creator.platform}</Badge>
+                    )}
                     {creator.contacted_at && (
                       <>
                         <Clock className="h-3 w-3" />
@@ -114,7 +122,7 @@ export const OutreachStep: React.FC<OutreachStepProps> = ({ campaignCreators, on
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Contact {creator.creator_id}</DialogTitle>
+                      <DialogTitle>Contact {creator.name || creator.creator_id}</DialogTitle>
                     </DialogHeader>
                     
                     <div className="space-y-4">

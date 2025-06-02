@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { BarChart3, Download, FileText, Table } from 'lucide-react';
 import { CampaignCreator } from '@/hooks/useCampaignCreators';
 import { useToast } from '@/hooks/use-toast';
@@ -20,8 +21,14 @@ export const ReportStep: React.FC<ReportStepProps> = ({ campaignCreators, campai
 CREATOR CAMPAIGN REPORT
 
 Campaign: ${campaignName}
-Creator: ${creator.creator_id}
+Creator: ${creator.name || creator.creator_id}
 Report Generated: ${new Date().toLocaleString()}
+
+=== CREATOR DETAILS ===
+Name: ${creator.name || creator.creator_id}
+Platform: ${creator.platform || 'N/A'}
+Followers: ${creator.followers?.toLocaleString() || 'N/A'}
+Engagement Rate: ${creator.engagement_rate || 'N/A'}%
 
 === OUTREACH ===
 Contact Method: ${creator.contact_method || 'Not contacted'}
@@ -51,7 +58,7 @@ This is a MOCK REPORT for demonstration purposes only.
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `Report_${creator.creator_id.replace(/\s+/g, '_')}_${Date.now()}.txt`;
+    link.download = `Report_${(creator.name || creator.creator_id).replace(/\s+/g, '_')}_${Date.now()}.txt`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -59,7 +66,7 @@ This is a MOCK REPORT for demonstration purposes only.
 
     toast({
       title: "Report Downloaded",
-      description: `Campaign report for ${creator.creator_id} has been downloaded`,
+      description: `Campaign report for ${creator.name || creator.creator_id} has been downloaded`,
     });
   };
 
@@ -85,7 +92,8 @@ Total Budget: $${totalBudget.toLocaleString()}
 
 === CREATOR BREAKDOWN ===
 ${campaignCreators.map(creator => `
-Creator: ${creator.creator_id}
+Creator: ${creator.name || creator.creator_id}
+Platform: ${creator.platform || 'N/A'}
 Status: ${creator.status}
 Rate: $${creator.agreed_rate?.toLocaleString() || '0'}
 Contract: ${creator.contract_signed ? 'Signed' : 'Unsigned'}
@@ -160,9 +168,16 @@ This is a MOCK REPORT for demonstration purposes only.
               {campaignCreators.map((creator) => (
                 <div key={creator.id} className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={creator.avatar} alt={creator.name} />
+                      <AvatarFallback>{creator.name?.split(' ').map(n => n[0]).join('') || 'C'}</AvatarFallback>
+                    </Avatar>
                     <div>
-                      <h5 className="font-medium">{creator.creator_id}</h5>
+                      <h5 className="font-medium">{creator.name || creator.creator_id}</h5>
                       <div className="flex items-center gap-4 text-sm text-gray-500">
+                        {creator.platform && (
+                          <Badge variant="outline" className="text-xs">{creator.platform}</Badge>
+                        )}
                         <span>Rate: ${creator.agreed_rate?.toLocaleString() || '0'}</span>
                         <span>Deliverables: {creator.deliverables_count}</span>
                         <span>Payment: {creator.payment_status}</span>

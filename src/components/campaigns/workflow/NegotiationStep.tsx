@@ -2,11 +2,11 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { HandHeart, DollarSign, Package } from 'lucide-react';
 import { CampaignCreator } from '@/hooks/useCampaignCreators';
 import { useToast } from '@/hooks/use-toast';
@@ -50,7 +50,7 @@ export const NegotiationStep: React.FC<NegotiationStepProps> = ({ campaignCreato
     
     toast({
       title: "Negotiation Updated",
-      description: `Updated negotiation status for ${creator.creator_id}`,
+      description: `Updated negotiation status for ${creator.name || creator.creator_id}`,
     });
   };
 
@@ -84,9 +84,16 @@ export const NegotiationStep: React.FC<NegotiationStepProps> = ({ campaignCreato
           {campaignCreators.map((creator) => (
             <div key={creator.id} className="flex items-center justify-between p-4 border rounded-lg">
               <div className="flex items-center gap-3">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={creator.avatar} alt={creator.name} />
+                  <AvatarFallback>{creator.name?.split(' ').map(n => n[0]).join('') || 'C'}</AvatarFallback>
+                </Avatar>
                 <div>
-                  <h4 className="font-medium">{creator.creator_id}</h4>
+                  <h4 className="font-medium">{creator.name || creator.creator_id}</h4>
                   <div className="flex items-center gap-4 text-sm text-gray-500">
+                    {creator.platform && (
+                      <Badge variant="outline" className="text-xs">{creator.platform}</Badge>
+                    )}
                     {creator.agreed_rate && (
                       <div className="flex items-center gap-1">
                         <DollarSign className="h-3 w-3" />
@@ -128,7 +135,7 @@ export const NegotiationStep: React.FC<NegotiationStepProps> = ({ campaignCreato
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Negotiate with {creator.creator_id}</DialogTitle>
+                      <DialogTitle>Negotiate with {creator.name || creator.creator_id}</DialogTitle>
                     </DialogHeader>
                     
                     <div className="space-y-4">

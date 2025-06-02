@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { FileText, Download, Check, Clock } from 'lucide-react';
 import { CampaignCreator } from '@/hooks/useCampaignCreators';
 import { useToast } from '@/hooks/use-toast';
@@ -27,7 +28,7 @@ export const ContractStep: React.FC<ContractStepProps> = ({ campaignCreators, on
       const contractContent = `
 CONTRACT AGREEMENT
 
-This agreement is between Brand Agency and ${creator.creator_id}
+This agreement is between Brand Agency and ${creator.name || creator.creator_id}
 
 DELIVERABLES:
 - ${creator.deliverables_count} content pieces
@@ -47,7 +48,7 @@ Generated on: ${new Date().toLocaleDateString()}
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `Contract_${creator.creator_id.replace(/\s+/g, '_')}_${Date.now()}.txt`;
+      link.download = `Contract_${(creator.name || creator.creator_id).replace(/\s+/g, '_')}_${Date.now()}.txt`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -58,7 +59,7 @@ Generated on: ${new Date().toLocaleDateString()}
       
       toast({
         title: "Contract Generated",
-        description: `Contract created and downloaded for ${creator.creator_id}`,
+        description: `Contract created and downloaded for ${creator.name || creator.creator_id}`,
       });
     }, 1500);
   };
@@ -70,7 +71,7 @@ Generated on: ${new Date().toLocaleDateString()}
     
     toast({
       title: signed ? "Contract Signed" : "Contract Unsigned",
-      description: `Contract status updated for ${creator.creator_id}`,
+      description: `Contract status updated for ${creator.name || creator.creator_id}`,
     });
   };
 
@@ -94,9 +95,16 @@ Generated on: ${new Date().toLocaleDateString()}
           {campaignCreators.filter(creator => creator.agreed_rate).map((creator) => (
             <div key={creator.id} className="flex items-center justify-between p-4 border rounded-lg">
               <div className="flex items-center gap-3">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={creator.avatar} alt={creator.name} />
+                  <AvatarFallback>{creator.name?.split(' ').map(n => n[0]).join('') || 'C'}</AvatarFallback>
+                </Avatar>
                 <div>
-                  <h4 className="font-medium">{creator.creator_id}</h4>
+                  <h4 className="font-medium">{creator.name || creator.creator_id}</h4>
                   <div className="flex items-center gap-4 text-sm text-gray-500">
+                    {creator.platform && (
+                      <Badge variant="outline" className="text-xs">{creator.platform}</Badge>
+                    )}
                     <span>Rate: ${creator.agreed_rate?.toLocaleString()}</span>
                     <span>Deliverables: {creator.deliverables_count}</span>
                   </div>
@@ -118,14 +126,14 @@ Generated on: ${new Date().toLocaleDateString()}
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Contract for {creator.creator_id}</DialogTitle>
+                      <DialogTitle>Contract for {creator.name || creator.creator_id}</DialogTitle>
                     </DialogHeader>
                     
                     <div className="space-y-4">
                       <div className="p-4 bg-gray-50 rounded-lg">
                         <h4 className="font-medium mb-2">Agreement Summary</h4>
                         <div className="text-sm space-y-1">
-                          <div>Creator: {creator.creator_id}</div>
+                          <div>Creator: {creator.name || creator.creator_id}</div>
                           <div>Rate: ${creator.agreed_rate?.toLocaleString()}</div>
                           <div>Deliverables: {creator.deliverables_count}</div>
                           <div>Status: {creator.contract_signed ? 'Signed' : 'Unsigned'}</div>
