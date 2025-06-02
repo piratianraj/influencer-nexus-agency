@@ -1,11 +1,11 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Progress } from '@/components/ui/progress';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Users, TrendingUp, DollarSign, Eye, Heart, Share, BarChart3, Trash2 } from 'lucide-react';
+import { ArrowLeft, Users, TrendingUp, DollarSign, Eye, Heart, BarChart3, Trash2 } from 'lucide-react';
 import { EnhancedWorkflowGuide } from '@/components/EnhancedWorkflowGuide';
 import { Campaign } from '@/hooks/useCampaigns';
 
@@ -31,7 +31,7 @@ interface CampaignDetailsProps {
 
 // Mock influencer data
 const mockInfluencers: Record<string, Influencer[]> = {
-  '1': [
+  '2c11ad40-bc05-4e1d-b485-10d91ab6ab57': [
     {
       id: '1',
       name: 'Emma Style',
@@ -63,18 +63,6 @@ const mockInfluencers: Record<string, Influencer[]> = {
       agreed_rate: 5000,
       status: 'completed',
       deliverables: ['1 review video', '2 shorts']
-    }
-  ],
-  '4': [
-    {
-      id: '4',
-      name: 'FitLife Coach',
-      platform: 'Instagram',
-      followers: 320000,
-      engagement_rate: 3.8,
-      agreed_rate: 1800,
-      status: 'accepted',
-      deliverables: ['5 workout posts', '10 stories']
     }
   ]
 };
@@ -204,6 +192,7 @@ export const CampaignDetails: React.FC<CampaignDetailsProps> = ({
             <CardContent>
               <EnhancedWorkflowGuide 
                 campaignId={campaign.id}
+                campaignName={campaign.name}
                 currentStep={campaign.workflow_step} 
                 onStepUpdate={handleWorkflowStepUpdate}
                 onEdit={onEdit} 
