@@ -183,6 +183,13 @@ export type Database = {
             referencedRelation: "creator database"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "creator_database_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "creator database"
+            referencedColumns: ["id"]
+          },
         ]
       }
       campaigns: {
