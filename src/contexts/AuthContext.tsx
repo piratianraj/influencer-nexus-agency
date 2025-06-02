@@ -113,45 +113,67 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    let mounted = true;
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session);
+        
+        if (!mounted) return;
+        
         setSession(session);
         
         if (session?.user) {
           // User is authenticated, fetch their profile
           const profile = await fetchUserProfile(session.user.id);
-          setUser(profile);
-          setGuestId(null);
-          // Clear guest session when user logs in
-          localStorage.removeItem('guest_session_id');
+          if (mounted) {
+            setUser(profile);
+            setGuestId(null);
+            // Clear guest session when user logs in
+            localStorage.removeItem('guest_session_id');
+          }
         } else {
           // No authenticated user, set up guest tracking
-          setUser(null);
-          const sessionId = getGuestSessionId();
-          const guestUserId = await ensureGuestUser(sessionId);
-          setGuestId(guestUserId);
+          if (mounted) {
+            setUser(null);
+            const sessionId = getGuestSessionId();
+            const guestUserId = await ensureGuestUser(sessionId);
+            if (mounted) {
+              setGuestId(guestUserId);
+            }
+          }
         }
-        setIsLoading(false);
+        
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
     );
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      
       if (!session) {
         // No authenticated user, set up guest
         const sessionId = getGuestSessionId();
-        ensureGuestUser(sessionId).then(setGuestId);
-        setIsLoading(false);
+        ensureGuestUser(sessionId).then(guestUserId => {
+          if (mounted) {
+            setGuestId(guestUserId);
+            setIsLoading(false);
+          }
+        });
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string): Promise<{ error?: string }> => {
-    setIsLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -159,18 +181,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
-        setIsLoading(false);
         return { error: error.message };
       }
       return {};
     } catch (error) {
-      setIsLoading(false);
       return { error: 'An unexpected error occurred' };
     }
   };
 
   const signup = async (email: string, password: string, name: string, type: 'brand' | 'creator'): Promise<{ error?: string }> => {
-    setIsLoading(true);
     try {
       const { error } = await supabase.auth.signUp({
         email,
@@ -185,21 +204,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
-        setIsLoading(false);
         return { error: error.message };
       }
       return {};
     } catch (error) {
-      setIsLoading(false);
       return { error: 'An unexpected error occurred' };
     }
   };
 
   const loginAsGuest = async () => {
-    // Guest login is already handled in the auth state change listener
-    const sessionId = getGuestSessionId();
-    const guestUserId = await ensureGuestUser(sessionId);
-    setGuestId(guestUserId);
+    try {
+      // Clear any existing session first
+      await supabase.auth.signOut();
+      
+      // Set up guest session
+      const sessionId = getGuestSessionId();
+      const guestUserId = await ensureGuestUser(sessionId);
+      setGuestId(guestUserId);
+      setUser(null);
+      setSession(null);
+    } catch (error) {
+      console.error('Error setting up guest session:', error);
+      throw error;
+    }
   };
 
   const logout = async () => {

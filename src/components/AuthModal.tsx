@@ -39,6 +39,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (isSubmitting || isLoading) return;
+    
     setIsSubmitting(true);
     
     try {
@@ -113,6 +116,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
     }
   };
 
+  const isFormDisabled = isSubmitting || isLoading;
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
@@ -133,6 +138,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
                   onChange={(e) => setName(e.target.value)}
                   required
                   placeholder="Enter your full name"
+                  disabled={isFormDisabled}
                 />
               </div>
               <div>
@@ -142,6 +148,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
                   value={userType}
                   onChange={(e) => setUserType(e.target.value as 'brand' | 'creator')}
                   className="w-full p-2 border rounded-md bg-white"
+                  disabled={isFormDisabled}
                 >
                   <option value="brand">Brand/Company</option>
                   <option value="creator">Content Creator</option>
@@ -158,6 +165,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="Enter your email"
+              disabled={isFormDisabled}
             />
           </div>
           <div>
@@ -170,10 +178,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
               required
               placeholder="Enter your password"
               minLength={6}
+              disabled={isFormDisabled}
             />
           </div>
-          <Button type="submit" className="w-full" disabled={isSubmitting || isLoading}>
-            {isSubmitting || isLoading ? 'Loading...' : mode === 'login' ? 'Sign In' : 'Create Account'}
+          <Button type="submit" className="w-full" disabled={isFormDisabled}>
+            {isFormDisabled ? 'Loading...' : mode === 'login' ? 'Sign In' : 'Create Account'}
           </Button>
         </form>
         
@@ -190,7 +199,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
           variant="outline" 
           className="w-full" 
           onClick={handleGuestLogin}
-          disabled={isLoading}
+          disabled={isFormDisabled}
         >
           Continue as Guest
         </Button>
@@ -200,6 +209,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
             type="button"
             onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
             className="text-sm text-blue-600 hover:underline"
+            disabled={isFormDisabled}
           >
             {mode === 'login' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
           </button>
