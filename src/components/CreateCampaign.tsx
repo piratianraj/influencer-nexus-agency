@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,55 +7,57 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Calendar, DollarSign, Target, Users } from 'lucide-react';
-
-interface Campaign {
-  name: string;
-  description: string;
-  status: 'draft' | 'active' | 'paused' | 'completed' | 'cancelled';
-  budget: number;
-  total_spend: number;
-  total_reach: number;
-  total_impressions: number;
-  total_engagement: number;
-  start_date: string;
-  end_date: string;
-  influencer_count: number;
-}
+import { useCampaigns, Campaign } from '@/hooks/useCampaigns';
 
 interface CreateCampaignProps {
-  onBack: () => void;
-  onSubmit: (campaign: Omit<Campaign, 'id'>) => void;
-  prefilledData?: any;
+  onClose: () => void;
+  onSuccess: () => void;
+  editingCampaign?: Campaign | null;
 }
 
-export const CreateCampaign: React.FC<CreateCampaignProps> = ({ onBack, onSubmit, prefilledData }) => {
+export const CreateCampaign: React.FC<CreateCampaignProps> = ({ 
+  onClose, 
+  onSuccess, 
+  editingCampaign 
+}) => {
+  const { createCampaign, updateCampaign } = useCampaigns();
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    status: 'draft' as Campaign['status'],
-    budget: '',
-    start_date: '',
-    end_date: ''
+    name: editingCampaign?.name || '',
+    description: editingCampaign?.description || '',
+    status: editingCampaign?.status || 'draft' as Campaign['status'],
+    budget: editingCampaign?.budget?.toString() || '',
+    start_date: editingCampaign?.start_date || '',
+    end_date: editingCampaign?.end_date || ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const campaign: Omit<Campaign, 'id'> = {
+    const campaignData = {
       name: formData.name,
       description: formData.description,
       status: formData.status,
       budget: parseFloat(formData.budget) || 0,
-      total_spend: 0,
-      total_reach: 0,
-      total_impressions: 0,
-      total_engagement: 0,
+      total_spend: editingCampaign?.total_spend || 0,
+      total_reach: editingCampaign?.total_reach || 0,
+      total_impressions: editingCampaign?.total_impressions || 0,
+      total_engagement: editingCampaign?.total_engagement || 0,
       start_date: formData.start_date,
       end_date: formData.end_date,
-      influencer_count: 0
+      influencer_count: editingCampaign?.influencer_count || 0,
+      workflow_step: editingCampaign?.workflow_step || 'campaign-creation' as const
     };
 
-    onSubmit(campaign);
+    let result;
+    if (editingCampaign) {
+      result = await updateCampaign(editingCampaign.id, campaignData);
+    } else {
+      result = await createCampaign(campaignData);
+    }
+
+    if (result) {
+      onSuccess();
+    }
   };
 
   const handleChange = (field: keyof typeof formData, value: string) => {
@@ -67,15 +70,19 @@ export const CreateCampaign: React.FC<CreateCampaignProps> = ({ onBack, onSubmit
         <div className="mb-8">
           <Button 
             variant="ghost" 
-            onClick={onBack}
+            onClick={onClose}
             className="mb-4 flex items-center gap-2"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Campaigns
           </Button>
           
-          <h1 className="text-3xl font-bold text-gray-900">Create New Campaign</h1>
-          <p className="text-gray-600 mt-2">Set up your influencer marketing campaign</p>
+          <h1 className="text-3xl font-bold text-gray-900">
+            {editingCampaign ? 'Edit Campaign' : 'Create New Campaign'}
+          </h1>
+          <p className="text-gray-600 mt-2">
+            {editingCampaign ? 'Update your campaign details' : 'Set up your influencer marketing campaign'}
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
@@ -178,83 +185,85 @@ export const CreateCampaign: React.FC<CreateCampaignProps> = ({ onBack, onSubmit
             </CardContent>
           </Card>
 
-          {/* Campaign Presets */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Campaign Presets
-              </CardTitle>
-              <CardDescription>
-                Quick setup options for common campaign types
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="p-4 h-auto flex flex-col items-start"
-                  onClick={() => {
-                    setFormData(prev => ({
-                      ...prev,
-                      name: 'Product Launch Campaign',
-                      description: 'Launch a new product with targeted influencer content',
-                      budget: '25000',
-                      status: 'draft'
-                    }));
-                  }}
-                >
-                  <div className="font-semibold mb-1">Product Launch</div>
-                  <div className="text-sm text-gray-600">New product introduction</div>
-                </Button>
-                
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="p-4 h-auto flex flex-col items-start"
-                  onClick={() => {
-                    setFormData(prev => ({
-                      ...prev,
-                      name: 'Brand Awareness Campaign',
-                      description: 'Increase brand visibility and reach new audiences',
-                      budget: '50000',
-                      status: 'draft'
-                    }));
-                  }}
-                >
-                  <div className="font-semibold mb-1">Brand Awareness</div>
-                  <div className="text-sm text-gray-600">Expand brand reach</div>
-                </Button>
-                
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="p-4 h-auto flex flex-col items-start"
-                  onClick={() => {
-                    setFormData(prev => ({
-                      ...prev,
-                      name: 'Seasonal Campaign',
-                      description: 'Seasonal promotion with relevant influencers',
-                      budget: '35000',
-                      status: 'draft'
-                    }));
-                  }}
-                >
-                  <div className="font-semibold mb-1">Seasonal</div>
-                  <div className="text-sm text-gray-600">Holiday or seasonal content</div>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Campaign Presets - only show for new campaigns */}
+          {!editingCampaign && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Campaign Presets
+                </CardTitle>
+                <CardDescription>
+                  Quick setup options for common campaign types
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="p-4 h-auto flex flex-col items-start"
+                    onClick={() => {
+                      setFormData(prev => ({
+                        ...prev,
+                        name: 'Product Launch Campaign',
+                        description: 'Launch a new product with targeted influencer content',
+                        budget: '25000',
+                        status: 'draft'
+                      }));
+                    }}
+                  >
+                    <div className="font-semibold mb-1">Product Launch</div>
+                    <div className="text-sm text-gray-600">New product introduction</div>
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="p-4 h-auto flex flex-col items-start"
+                    onClick={() => {
+                      setFormData(prev => ({
+                        ...prev,
+                        name: 'Brand Awareness Campaign',
+                        description: 'Increase brand visibility and reach new audiences',
+                        budget: '50000',
+                        status: 'draft'
+                      }));
+                    }}
+                  >
+                    <div className="font-semibold mb-1">Brand Awareness</div>
+                    <div className="text-sm text-gray-600">Expand brand reach</div>
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="p-4 h-auto flex flex-col items-start"
+                    onClick={() => {
+                      setFormData(prev => ({
+                        ...prev,
+                        name: 'Seasonal Campaign',
+                        description: 'Seasonal promotion with relevant influencers',
+                        budget: '35000',
+                        status: 'draft'
+                      }));
+                    }}
+                  >
+                    <div className="font-semibold mb-1">Seasonal</div>
+                    <div className="text-sm text-gray-600">Holiday or seasonal content</div>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Submit Button */}
           <div className="flex justify-end gap-4">
-            <Button type="button" variant="outline" onClick={onBack}>
+            <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
             <Button type="submit" disabled={!formData.name}>
-              Create Campaign
+              {editingCampaign ? 'Update Campaign' : 'Create Campaign'}
             </Button>
           </div>
         </form>

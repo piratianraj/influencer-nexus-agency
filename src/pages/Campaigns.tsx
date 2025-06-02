@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,6 +9,7 @@ import { CreateCampaign } from '@/components/CreateCampaign';
 import { CampaignDetails } from '@/components/CampaignDetails';
 import { Header } from '@/components/Header';
 import { useCampaigns, Campaign } from '@/hooks/useCampaigns';
+import { useCampaignCreators } from '@/hooks/useCampaignCreators';
 import { Skeleton } from '@/components/ui/skeleton';
 
 type WorkflowStep = 'campaign-creation' | 'creator-search' | 'outreach' | 'deal-negotiation' | 'contract' | 'payment' | 'report';
@@ -15,7 +17,8 @@ type WorkflowStep = 'campaign-creation' | 'creator-search' | 'outreach' | 'deal-
 const Campaigns = () => {
   const navigate = useNavigate();
   const { campaignId } = useParams();
-  const { campaigns, loading, updateCampaign, deleteCampaign } = useCampaigns();
+  const { campaigns, loading, updateCampaign, deleteCampaign, refetch } = useCampaigns();
+  const { refetch: refetchCampaignCreators } = useCampaignCreators(campaignId);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
 
@@ -28,6 +31,13 @@ const Campaigns = () => {
       }
     }
   }, [campaignId, campaigns]);
+
+  // Refetch campaign creators when coming back from Discovery
+  useEffect(() => {
+    if (campaignId && refetchCampaignCreators) {
+      refetchCampaignCreators();
+    }
+  }, [campaignId, refetchCampaignCreators]);
 
   const handleViewCampaign = (campaign: Campaign) => {
     setSelectedCampaign(campaign);
@@ -43,6 +53,8 @@ const Campaigns = () => {
   const handleWorkflowUpdate = async (campaignId: string, step: string) => {
     const workflowStep = step as WorkflowStep;
     await updateCampaign(campaignId, { workflow_step: workflowStep });
+    // Refetch campaigns to get updated data
+    await refetch();
   };
 
   const handleEditCampaign = () => {
@@ -56,6 +68,12 @@ const Campaigns = () => {
     if (success) {
       handleBackToCampaigns();
     }
+  };
+
+  const handleCreateSuccess = () => {
+    setShowCreateForm(false);
+    setSelectedCampaign(null);
+    refetch();
   };
 
   const getStatusColor = (status: Campaign['status']) => {
@@ -122,9 +140,7 @@ const Campaigns = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <CreateCampaign
             onClose={() => setShowCreateForm(false)}
-            onSuccess={() => {
-              setShowCreateForm(false);
-            }}
+            onSuccess={handleCreateSuccess}
             editingCampaign={selectedCampaign}
           />
         </div>
