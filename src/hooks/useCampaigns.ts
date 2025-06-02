@@ -67,6 +67,7 @@ export const useCampaigns = () => {
 
   const fetchCampaigns = async () => {
     if (!user) {
+      console.log('No user authenticated, clearing campaigns');
       setCampaigns([]);
       setLoading(false);
       return;
@@ -74,20 +75,32 @@ export const useCampaigns = () => {
 
     try {
       setLoading(true);
-      console.log('Fetching campaigns from database...');
+      console.log('Fetching campaigns for user:', user.id);
       
       const { data, error } = await supabase
         .from('campaigns')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching campaigns:', error);
-        toast({
-          title: "Database Error",
-          description: "Failed to fetch campaigns. Using sample data.",
-          variant: "destructive"
-        });
+        
+        // If it's an RLS error, provide specific guidance
+        if (error.message.includes('row-level security')) {
+          toast({
+            title: "Access Error",
+            description: "Unable to access campaigns. Please try logging out and back in.",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Database Error",
+            description: "Failed to fetch campaigns. Using sample data.",
+            variant: "destructive"
+          });
+        }
+        
         setCampaigns(getMockCampaigns());
         return;
       }
@@ -120,6 +133,7 @@ export const useCampaigns = () => {
 
   const createCampaign = async (campaignData: Omit<Campaign, 'id' | 'created_at' | 'updated_at'>) => {
     if (!user) {
+      console.error('No authenticated user for campaign creation');
       toast({
         title: "Authentication Required",
         description: "Please sign in to create campaigns.",
@@ -129,22 +143,45 @@ export const useCampaigns = () => {
     }
 
     try {
+      console.log('Creating campaign with data:', campaignData);
+      console.log('User ID:', user.id);
+
+      const insertData = {
+        ...campaignData,
+        user_id: user.id
+      };
+
+      console.log('Final insert data:', insertData);
+
       const { data, error } = await supabase
         .from('campaigns')
-        .insert([{
-          ...campaignData,
-          user_id: user.id
-        }])
+        .insert([insertData])
         .select()
         .single();
 
       if (error) {
-        console.error('Error creating campaign:', error);
-        toast({
-          title: "Error",
-          description: "Failed to create campaign. Please try again.",
-          variant: "destructive"
-        });
+        console.error('Database error creating campaign:', error);
+        
+        // Provide specific error messages based on the error type
+        if (error.message.includes('violates row-level security policy')) {
+          toast({
+            title: "Permission Error",
+            description: "Unable to create campaign. Please try logging out and back in.",
+            variant: "destructive"
+          });
+        } else if (error.message.includes('not-null')) {
+          toast({
+            title: "Validation Error",
+            description: "Please fill in all required fields.",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: `Failed to create campaign: ${error.message}`,
+            variant: "destructive"
+          });
+        }
         return null;
       }
 
@@ -153,6 +190,7 @@ export const useCampaigns = () => {
         description: `Campaign "${campaignData.name}" has been created successfully.`,
       });
 
+      console.log('Campaign created successfully:', data);
       await fetchCampaigns();
       return data as Campaign;
     } catch (error) {
@@ -170,10 +208,13 @@ export const useCampaigns = () => {
     if (!user) return null;
 
     try {
+      console.log('Updating campaign:', id, 'with data:', updates);
+
       const { data, error } = await supabase
         .from('campaigns')
         .update(updates)
         .eq('id', id)
+        .eq('user_id', user.id)
         .select()
         .single();
 
@@ -181,7 +222,7 @@ export const useCampaigns = () => {
         console.error('Error updating campaign:', error);
         toast({
           title: "Error",
-          description: "Failed to update campaign.",
+          description: `Failed to update campaign: ${error.message}`,
           variant: "destructive"
         });
         return null;
@@ -196,6 +237,11 @@ export const useCampaigns = () => {
       return data as Campaign;
     } catch (error) {
       console.error('Unexpected error updating campaign:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while updating the campaign.",
+        variant: "destructive"
+      });
       return null;
     }
   };
@@ -204,16 +250,19 @@ export const useCampaigns = () => {
     if (!user) return false;
 
     try {
+      console.log('Deleting campaign:', id);
+
       const { error } = await supabase
         .from('campaigns')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', user.id);
 
       if (error) {
         console.error('Error deleting campaign:', error);
         toast({
           title: "Error",
-          description: "Failed to delete campaign.",
+          description: `Failed to delete campaign: ${error.message}`,
           variant: "destructive"
         });
         return false;
@@ -228,6 +277,11 @@ export const useCampaigns = () => {
       return true;
     } catch (error) {
       console.error('Unexpected error deleting campaign:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while deleting the campaign.",
+        variant: "destructive"
+      });
       return false;
     }
   };
