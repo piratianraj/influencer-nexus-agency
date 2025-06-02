@@ -159,13 +159,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
+        setIsLoading(false);
         return { error: error.message };
       }
       return {};
     } catch (error) {
-      return { error: 'An unexpected error occurred' };
-    } finally {
       setIsLoading(false);
+      return { error: 'An unexpected error occurred' };
     }
   };
 
@@ -185,13 +185,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
+        setIsLoading(false);
         return { error: error.message };
       }
       return {};
     } catch (error) {
-      return { error: 'An unexpected error occurred' };
-    } finally {
       setIsLoading(false);
+      return { error: 'An unexpected error occurred' };
     }
   };
 

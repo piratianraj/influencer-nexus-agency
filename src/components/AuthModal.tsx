@@ -29,6 +29,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
   useEffect(() => {
     if (isOpen) {
       setMode(defaultMode);
+      // Reset form when modal opens
+      setEmail('');
+      setPassword('');
+      setName('');
+      setIsSubmitting(false);
     }
   }, [isOpen, defaultMode]);
 
@@ -36,57 +41,58 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
     e.preventDefault();
     setIsSubmitting(true);
     
-    if (mode === 'login') {
-      const { error } = await login(email, password);
-      if (error) {
+    try {
+      if (mode === 'login') {
+        const { error } = await login(email, password);
+        if (error) {
+          toast({
+            title: "Login Failed",
+            description: error,
+            variant: "destructive"
+          });
+          return;
+        }
         toast({
-          title: "Login Failed",
-          description: error,
-          variant: "destructive"
+          title: "Welcome back!",
+          description: "You have successfully logged in.",
         });
-        setIsSubmitting(false);
-        return;
+        onClose();
+        navigate('/');
+      } else {
+        if (!name.trim()) {
+          toast({
+            title: "Name Required",
+            description: "Please enter your full name.",
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        const { error } = await signup(email, password, name, userType);
+        if (error) {
+          toast({
+            title: "Signup Failed",
+            description: error,
+            variant: "destructive"
+          });
+          return;
+        }
+        toast({
+          title: "Account Created!",
+          description: "Please check your email to verify your account.",
+        });
+        onClose();
+        navigate('/');
       }
+    } catch (error) {
       toast({
-        title: "Welcome back!",
-        description: "You have successfully logged in.",
+        title: "Error",
+        description: "An unexpected error occurred.",
+        variant: "destructive"
       });
-      onClose();
-      navigate('/'); // Navigate to dashboard (home page will show UserDashboard for authenticated users)
-    } else {
-      if (!name.trim()) {
-        toast({
-          title: "Name Required",
-          description: "Please enter your full name.",
-          variant: "destructive"
-        });
-        setIsSubmitting(false);
-        return;
-      }
-      
-      const { error } = await signup(email, password, name, userType);
-      if (error) {
-        toast({
-          title: "Signup Failed",
-          description: error,
-          variant: "destructive"
-        });
-        setIsSubmitting(false);
-        return;
-      }
-      toast({
-        title: "Account Created!",
-        description: "Please check your email to verify your account.",
-      });
-      onClose();
-      navigate('/'); // Navigate to dashboard
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    // Reset form
-    setEmail('');
-    setPassword('');
-    setName('');
-    setIsSubmitting(false);
   };
 
   const handleGuestLogin = async () => {
@@ -97,7 +103,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
         description: "You can now browse and search creators.",
       });
       onClose();
-      navigate('/'); // Navigate to main page
+      navigate('/');
     } catch (error) {
       toast({
         title: "Error",
