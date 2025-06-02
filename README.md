@@ -1,73 +1,60 @@
-# Welcome to your Lovable project
+# Influencer Nexus Agency
 
-## Project info
+A modern influencer marketing platform for brands and agencies to discover, manage, and analyze influencer campaigns.
 
-**URL**: https://lovable.dev/projects/54abc952-880c-4d57-9dcc-aef896382177
+## 🚀 Project Overview
 
-## How can I edit this code?
+Influencer Nexus Agency is a full-stack web application that enables brands to:
+- Discover and filter creators/influencers
+- Create and manage influencer marketing campaigns
+- Track campaign progress and analytics
+- Collaborate with creators and manage contracts, payments, and reports
 
-There are several ways of editing your application.
+## ✨ Features
+- **Discovery:** Advanced search and filtering for creators
+- **Campaign Management:** Create, edit, and track campaigns
+- **Analytics:** Visualize campaign performance and ROI
+- **Workflow Guide:** Step-by-step campaign workflow
+- **Authentication:** User sign-in and access control
+- **Supabase Integration:** Real-time database and serverless functions
 
-**Use Lovable**
+## 🛠️ Tech Stack
+- **Frontend:** [React](https://react.dev/), [Vite](https://vitejs.dev/), [TypeScript](https://www.typescriptlang.org/)
+- **UI:** [shadcn/ui](https://ui.shadcn.com/), [Tailwind CSS](https://tailwindcss.com/), [Lucide Icons](https://lucide.dev/)
+- **Backend/DB:** [Supabase](https://supabase.com/) (Postgres, Auth, Edge Functions)
+- **State Management:** React Context, React Hooks
+- **Other:** [MIT License](#license)
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/54abc952-880c-4d57-9dcc-aef896382177) and start prompting.
+## 📦 Getting Started
 
-Changes made via Lovable will be committed automatically to this repo.
+1. **Install dependencies:**
+   ```sh
+   npm install
+   # or
+   bun install
+   ```
+2. **Set up environment variables:**
+   - Copy `.env.example` to `.env` and fill in your Supabase credentials.
+3. **Run the development server:**
+   ```sh
+   npm run dev
+   ```
+4. **Open your browser:**
+   - Visit [http://localhost:8080](http://localhost:8080)
 
-**Use your preferred IDE**
+## 📁 Project Structure
+- `src/pages/` — Main app pages (Discovery, Campaigns, Analytics, etc.)
+- `src/components/` — Reusable UI and feature components
+- `src/integrations/supabase/` — Supabase client and types
+- `supabase/functions/` — Supabase Edge Functions (API)
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🙌 About & Credits
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- **Made by:** Rohit Raj and Shubham Sinha
+- **Built with:** [Lovable](https://lovable.dev/) and [Cursor](https://www.cursor.so/)
+- **Hosted on:** [Vercel](https://vercel.com/)
+- **Powered by:** [Supabase](https://supabase.com/) (database, auth, edge functions) and DeepSeek LLM (AI/LLM features)
 
-Follow these steps:
+## 📝 License
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/54abc952-880c-4d57-9dcc-aef896382177) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+MIT License. See [LICENSE](LICENSE) for details.
