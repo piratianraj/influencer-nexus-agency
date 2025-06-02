@@ -16,6 +16,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useCampaigns } from '@/hooks/useCampaigns';
 
+type WorkflowStep = 'campaign-creation' | 'creator-search' | 'outreach' | 'deal-negotiation' | 'contract' | 'payment' | 'report';
+
 const Campaigns = () => {
   const { user } = useAuth();
   const location = useLocation();
@@ -151,7 +153,7 @@ const Campaigns = () => {
     }
   };
 
-  const handleWorkflowUpdate = async (campaignId: string, step: string) => {
+  const handleWorkflowUpdate = async (campaignId: string, step: WorkflowStep) => {
     const success = await updateCampaign(campaignId, { workflow_step: step });
     if (success) {
       toast({
