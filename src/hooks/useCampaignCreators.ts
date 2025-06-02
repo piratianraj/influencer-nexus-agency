@@ -1,4 +1,5 @@
 
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -47,28 +48,18 @@ export const useCampaignCreators = (campaignId?: string) => {
       setLoading(true);
       console.log('Fetching campaign creators for campaign:', campaignId);
       
-      // Join campaign_creators with creator database to get full creator details
-      const { data, error } = await supabase
+      // First get campaign creators
+      const { data: campaignCreatorsData, error: campaignCreatorsError } = await supabase
         .from('campaign_creators')
         .select(`
           *,
-          campaigns!inner(user_id),
-          creator_database!creator_database_id_fkey(
-            name,
-            handle,
-            email,
-            platform,
-            followers,
-            engagement_rate,
-            niche,
-            country
-          )
+          campaigns!inner(user_id)
         `)
         .eq('campaign_id', campaignId)
         .eq('campaigns.user_id', user.id);
 
-      if (error) {
-        console.error('Error fetching campaign creators:', error);
+      if (campaignCreatorsError) {
+        console.error('Error fetching campaign creators:', campaignCreatorsError);
         toast({
           title: "Database Error",
           description: "Failed to fetch campaign creators.",
@@ -77,31 +68,46 @@ export const useCampaignCreators = (campaignId?: string) => {
         return;
       }
 
-      const enrichedCreators = data?.map(item => ({
-        id: item.id,
-        campaign_id: item.campaign_id,
-        creator_id: item.creator_id,
-        status: item.status as CampaignCreator['status'],
-        agreed_rate: item.agreed_rate,
-        deliverables_count: item.deliverables_count,
-        contact_method: item.contact_method as CampaignCreator['contact_method'],
-        contacted_at: item.contacted_at,
-        negotiation_notes: item.negotiation_notes,
-        contract_signed: item.contract_signed,
-        payment_status: item.payment_status as CampaignCreator['payment_status'],
-        created_at: item.created_at,
-        updated_at: item.updated_at,
-        // Enhanced creator details
-        name: item.creator_database?.name || `Creator ${item.creator_id.slice(0, 8)}`,
-        handle: item.creator_database?.handle,
-        email: item.creator_database?.email,
-        platform: item.creator_database?.platform,
-        followers: item.creator_database?.followers,
-        engagement_rate: item.creator_database?.engagement_rate,
-        niche: item.creator_database?.niche,
-        country: item.creator_database?.country,
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${item.creator_id}`
-      })) || [];
+      // Then get creator details for each creator_id
+      const enrichedCreators = await Promise.all(
+        (campaignCreatorsData || []).map(async (campaignCreator) => {
+          const { data: creatorData, error: creatorError } = await supabase
+            .from('creator database')
+            .select('name, handle, email, platform, followers, engagement_rate, niche, country')
+            .eq('id', campaignCreator.creator_id)
+            .maybeSingle();
+
+          if (creatorError) {
+            console.error('Error fetching creator data for:', campaignCreator.creator_id, creatorError);
+          }
+
+          return {
+            id: campaignCreator.id,
+            campaign_id: campaignCreator.campaign_id,
+            creator_id: campaignCreator.creator_id,
+            status: campaignCreator.status as CampaignCreator['status'],
+            agreed_rate: campaignCreator.agreed_rate,
+            deliverables_count: campaignCreator.deliverables_count,
+            contact_method: campaignCreator.contact_method as CampaignCreator['contact_method'],
+            contacted_at: campaignCreator.contacted_at,
+            negotiation_notes: campaignCreator.negotiation_notes,
+            contract_signed: campaignCreator.contract_signed,
+            payment_status: campaignCreator.payment_status as CampaignCreator['payment_status'],
+            created_at: campaignCreator.created_at,
+            updated_at: campaignCreator.updated_at,
+            // Enhanced creator details
+            name: creatorData?.name || `Creator ${campaignCreator.creator_id.slice(0, 8)}`,
+            handle: creatorData?.handle,
+            email: creatorData?.email,
+            platform: creatorData?.platform,
+            followers: creatorData?.followers,
+            engagement_rate: creatorData?.engagement_rate,
+            niche: creatorData?.niche,
+            country: creatorData?.country,
+            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${campaignCreator.creator_id}`
+          };
+        })
+      );
 
       setCampaignCreators(enrichedCreators);
     } catch (error) {
@@ -230,3 +236,4 @@ export const useCampaignCreators = (campaignId?: string) => {
     refetch: fetchCampaignCreators
   };
 };
+
