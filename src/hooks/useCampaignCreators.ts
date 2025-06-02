@@ -1,5 +1,4 @@
 
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,16 +18,6 @@ export interface CampaignCreator {
   payment_status: 'pending' | 'paid' | 'overdue';
   created_at: string;
   updated_at: string;
-  // Enhanced creator details from creator database
-  name?: string;
-  handle?: string;
-  email?: string;
-  platform?: string;
-  followers?: number;
-  engagement_rate?: number;
-  niche?: string;
-  country?: string;
-  avatar?: string;
 }
 
 export const useCampaignCreators = (campaignId?: string) => {
@@ -48,8 +37,7 @@ export const useCampaignCreators = (campaignId?: string) => {
       setLoading(true);
       console.log('Fetching campaign creators for campaign:', campaignId);
       
-      // First get campaign creators
-      const { data: campaignCreatorsData, error: campaignCreatorsError } = await supabase
+      const { data, error } = await supabase
         .from('campaign_creators')
         .select(`
           *,
@@ -58,8 +46,8 @@ export const useCampaignCreators = (campaignId?: string) => {
         .eq('campaign_id', campaignId)
         .eq('campaigns.user_id', user.id);
 
-      if (campaignCreatorsError) {
-        console.error('Error fetching campaign creators:', campaignCreatorsError);
+      if (error) {
+        console.error('Error fetching campaign creators:', error);
         toast({
           title: "Database Error",
           description: "Failed to fetch campaign creators.",
@@ -68,48 +56,21 @@ export const useCampaignCreators = (campaignId?: string) => {
         return;
       }
 
-      // Then get creator details for each creator_id
-      const enrichedCreators = await Promise.all(
-        (campaignCreatorsData || []).map(async (campaignCreator) => {
-          const { data: creatorData, error: creatorError } = await supabase
-            .from('creator database')
-            .select('name, handle, email, platform, followers, engagement_rate, niche, country')
-            .eq('id', campaignCreator.creator_id)
-            .maybeSingle();
-
-          if (creatorError) {
-            console.error('Error fetching creator data for:', campaignCreator.creator_id, creatorError);
-          }
-
-          return {
-            id: campaignCreator.id,
-            campaign_id: campaignCreator.campaign_id,
-            creator_id: campaignCreator.creator_id,
-            status: campaignCreator.status as CampaignCreator['status'],
-            agreed_rate: campaignCreator.agreed_rate,
-            deliverables_count: campaignCreator.deliverables_count,
-            contact_method: campaignCreator.contact_method as CampaignCreator['contact_method'],
-            contacted_at: campaignCreator.contacted_at,
-            negotiation_notes: campaignCreator.negotiation_notes,
-            contract_signed: campaignCreator.contract_signed,
-            payment_status: campaignCreator.payment_status as CampaignCreator['payment_status'],
-            created_at: campaignCreator.created_at,
-            updated_at: campaignCreator.updated_at,
-            // Enhanced creator details
-            name: creatorData?.name || `Creator ${campaignCreator.creator_id.slice(0, 8)}`,
-            handle: creatorData?.handle,
-            email: creatorData?.email,
-            platform: creatorData?.platform,
-            followers: creatorData?.followers,
-            engagement_rate: creatorData?.engagement_rate,
-            niche: creatorData?.niche,
-            country: creatorData?.country,
-            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${campaignCreator.creator_id}`
-          };
-        })
-      );
-
-      setCampaignCreators(enrichedCreators);
+      setCampaignCreators(data?.map(item => ({
+        id: item.id,
+        campaign_id: item.campaign_id,
+        creator_id: item.creator_id,
+        status: item.status as CampaignCreator['status'],
+        agreed_rate: item.agreed_rate,
+        deliverables_count: item.deliverables_count,
+        contact_method: item.contact_method as CampaignCreator['contact_method'],
+        contacted_at: item.contacted_at,
+        negotiation_notes: item.negotiation_notes,
+        contract_signed: item.contract_signed,
+        payment_status: item.payment_status as CampaignCreator['payment_status'],
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      })) || []);
     } catch (error) {
       console.error('Unexpected error:', error);
       toast({
@@ -162,38 +123,6 @@ export const useCampaignCreators = (campaignId?: string) => {
     }
   };
 
-  const removeCreatorFromCampaign = async (campaignCreatorId: string) => {
-    if (!user) return false;
-
-    try {
-      const { error } = await supabase
-        .from('campaign_creators')
-        .delete()
-        .eq('id', campaignCreatorId);
-
-      if (error) {
-        console.error('Error removing creator from campaign:', error);
-        toast({
-          title: "Error",
-          description: "Failed to remove creator from campaign.",
-          variant: "destructive"
-        });
-        return false;
-      }
-
-      toast({
-        title: "Creator Removed",
-        description: "Creator has been removed from the campaign.",
-      });
-
-      await fetchCampaignCreators();
-      return true;
-    } catch (error) {
-      console.error('Unexpected error:', error);
-      return false;
-    }
-  };
-
   const updateCampaignCreator = async (id: string, updates: Partial<CampaignCreator>) => {
     if (!user) return null;
 
@@ -231,9 +160,7 @@ export const useCampaignCreators = (campaignId?: string) => {
     campaignCreators,
     loading,
     addCreatorToCampaign,
-    removeCreatorFromCampaign,
     updateCampaignCreator,
     refetch: fetchCampaignCreators
   };
 };
-
