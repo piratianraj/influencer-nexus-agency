@@ -29,73 +29,64 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
   useEffect(() => {
     if (isOpen) {
       setMode(defaultMode);
-      // Reset form when modal opens
-      setEmail('');
-      setPassword('');
-      setName('');
-      setIsSubmitting(false);
     }
   }, [isOpen, defaultMode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (isSubmitting || isLoading) return;
-    
     setIsSubmitting(true);
     
-    try {
-      if (mode === 'login') {
-        const { error } = await login(email, password);
-        if (error) {
-          toast({
-            title: "Login Failed",
-            description: error,
-            variant: "destructive"
-          });
-          return;
-        }
+    if (mode === 'login') {
+      const { error } = await login(email, password);
+      if (error) {
         toast({
-          title: "Welcome back!",
-          description: "You have successfully logged in.",
+          title: "Login Failed",
+          description: error,
+          variant: "destructive"
         });
-        onClose();
-        navigate('/');
-      } else {
-        if (!name.trim()) {
-          toast({
-            title: "Name Required",
-            description: "Please enter your full name.",
-            variant: "destructive"
-          });
-          return;
-        }
-        
-        const { error } = await signup(email, password, name, userType);
-        if (error) {
-          toast({
-            title: "Signup Failed",
-            description: error,
-            variant: "destructive"
-          });
-          return;
-        }
-        toast({
-          title: "Account Created!",
-          description: "Please check your email to verify your account.",
-        });
-        onClose();
-        navigate('/');
+        setIsSubmitting(false);
+        return;
       }
-    } catch (error) {
       toast({
-        title: "Error",
-        description: "An unexpected error occurred.",
-        variant: "destructive"
+        title: "Welcome back!",
+        description: "You have successfully logged in.",
       });
-    } finally {
-      setIsSubmitting(false);
+      onClose();
+      navigate('/'); // Navigate to dashboard (home page will show UserDashboard for authenticated users)
+    } else {
+      if (!name.trim()) {
+        toast({
+          title: "Name Required",
+          description: "Please enter your full name.",
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      
+      const { error } = await signup(email, password, name, userType);
+      if (error) {
+        toast({
+          title: "Signup Failed",
+          description: error,
+          variant: "destructive"
+        });
+        setIsSubmitting(false);
+        return;
+      }
+      toast({
+        title: "Account Created!",
+        description: "Please check your email to verify your account.",
+      });
+      onClose();
+      navigate('/'); // Navigate to dashboard
     }
+    
+    // Reset form
+    setEmail('');
+    setPassword('');
+    setName('');
+    setIsSubmitting(false);
   };
 
   const handleGuestLogin = async () => {
@@ -106,7 +97,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
         description: "You can now browse and search creators.",
       });
       onClose();
-      navigate('/');
+      navigate('/'); // Navigate to main page
     } catch (error) {
       toast({
         title: "Error",
@@ -115,8 +106,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
       });
     }
   };
-
-  const isFormDisabled = isSubmitting || isLoading;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -138,7 +127,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
                   onChange={(e) => setName(e.target.value)}
                   required
                   placeholder="Enter your full name"
-                  disabled={isFormDisabled}
                 />
               </div>
               <div>
@@ -148,7 +136,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
                   value={userType}
                   onChange={(e) => setUserType(e.target.value as 'brand' | 'creator')}
                   className="w-full p-2 border rounded-md bg-white"
-                  disabled={isFormDisabled}
                 >
                   <option value="brand">Brand/Company</option>
                   <option value="creator">Content Creator</option>
@@ -165,7 +152,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="Enter your email"
-              disabled={isFormDisabled}
             />
           </div>
           <div>
@@ -178,11 +164,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
               required
               placeholder="Enter your password"
               minLength={6}
-              disabled={isFormDisabled}
             />
           </div>
-          <Button type="submit" className="w-full" disabled={isFormDisabled}>
-            {isFormDisabled ? 'Loading...' : mode === 'login' ? 'Sign In' : 'Create Account'}
+          <Button type="submit" className="w-full" disabled={isSubmitting || isLoading}>
+            {isSubmitting || isLoading ? 'Loading...' : mode === 'login' ? 'Sign In' : 'Create Account'}
           </Button>
         </form>
         
@@ -199,7 +184,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
           variant="outline" 
           className="w-full" 
           onClick={handleGuestLogin}
-          disabled={isFormDisabled}
+          disabled={isLoading}
         >
           Continue as Guest
         </Button>
@@ -209,7 +194,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMo
             type="button"
             onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
             className="text-sm text-blue-600 hover:underline"
-            disabled={isFormDisabled}
           >
             {mode === 'login' ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
           </button>

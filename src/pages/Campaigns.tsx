@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Header } from '@/components/Header';
 import { CreateCampaign } from '@/components/CreateCampaign';
 import { CampaignDetails } from '@/components/CampaignDetails';
@@ -15,18 +15,10 @@ type WorkflowStep = 'campaign-creation' | 'creator-search' | 'outreach' | 'deal-
 const Campaigns = () => {
   const navigate = useNavigate();
   const { campaignId } = useParams();
-  const [searchParams] = useSearchParams();
   const { campaigns, loading, updateCampaign, deleteCampaign, refetch } = useCampaigns();
   const { refetch: refetchCampaignCreators } = useCampaignCreators(campaignId);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
-
-  // Check for create parameter in URL
-  useEffect(() => {
-    if (searchParams.get('create') === 'true') {
-      setShowCreateForm(true);
-    }
-  }, [searchParams]);
 
   // Check if we have a specific campaign ID in the URL
   useEffect(() => {
@@ -52,7 +44,6 @@ const Campaigns = () => {
 
   const handleBackToCampaigns = () => {
     setSelectedCampaign(null);
-    setShowCreateForm(false);
     navigate('/campaigns');
   };
 
@@ -78,13 +69,7 @@ const Campaigns = () => {
   const handleCreateSuccess = () => {
     setShowCreateForm(false);
     setSelectedCampaign(null);
-    navigate('/campaigns');
     refetch();
-  };
-
-  const handleCreateCampaign = () => {
-    setShowCreateForm(true);
-    setSelectedCampaign(null);
   };
 
   if (loading) {
@@ -99,7 +84,7 @@ const Campaigns = () => {
   }
 
   // Show campaign details if a campaign is selected
-  if (selectedCampaign && !showCreateForm) {
+  if (selectedCampaign) {
     return (
       <CampaignDetails
         campaign={selectedCampaign}
@@ -119,7 +104,7 @@ const Campaigns = () => {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <CreateCampaign
             editingCampaign={selectedCampaign}
-            onClose={handleBackToCampaigns}
+            onClose={() => setShowCreateForm(false)}
             onSuccess={handleCreateSuccess}
           />
         </div>
@@ -131,7 +116,7 @@ const Campaigns = () => {
     <div className="min-h-screen bg-gray-50">
       <Header />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <CampaignHeader onCreateCampaign={handleCreateCampaign} />
+        <CampaignHeader onCreateCampaign={() => setShowCreateForm(true)} />
         <CampaignGrid campaigns={campaigns} onViewCampaign={handleViewCampaign} />
       </div>
     </div>

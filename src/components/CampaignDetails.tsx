@@ -1,24 +1,15 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Progress } from '@/components/ui/progress';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { ArrowLeft, Users, TrendingUp, DollarSign, Eye, Heart, Share, BarChart3, Trash2 } from 'lucide-react';
+import { ArrowLeft, Users, TrendingUp, DollarSign, Eye, Heart, BarChart3, Trash2, Plus } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { EnhancedWorkflowGuide } from '@/components/EnhancedWorkflowGuide';
+import { CampaignCreatorCard } from '@/components/campaigns/CampaignCreatorCard';
+import { useCampaignCreators } from '@/hooks/useCampaignCreators';
 import { Campaign } from '@/hooks/useCampaigns';
-
-interface Influencer {
-  id: string;
-  name: string;
-  platform: string;
-  followers: number;
-  engagement_rate: number;
-  agreed_rate: number;
-  status: 'pending' | 'accepted' | 'declined' | 'completed';
-  deliverables: string[];
-}
 
 interface CampaignDetailsProps {
   campaign: Campaign;
@@ -29,56 +20,6 @@ interface CampaignDetailsProps {
   onWorkflowUpdate?: (campaignId: string, step: string) => void;
 }
 
-// Mock influencer data
-const mockInfluencers: Record<string, Influencer[]> = {
-  '1': [
-    {
-      id: '1',
-      name: 'Emma Style',
-      platform: 'Instagram',
-      followers: 450000,
-      engagement_rate: 3.2,
-      agreed_rate: 2500,
-      status: 'completed',
-      deliverables: ['3 feed posts', '5 stories', '1 reel']
-    },
-    {
-      id: '2',
-      name: 'Fashion Forward Mia',
-      platform: 'TikTok',
-      followers: 680000,
-      engagement_rate: 4.1,
-      agreed_rate: 3200,
-      status: 'accepted',
-      deliverables: ['4 TikTok videos', '2 Instagram posts']
-    }
-  ],
-  '2': [
-    {
-      id: '3',
-      name: 'TechReviewer Pro',
-      platform: 'YouTube',
-      followers: 1200000,
-      engagement_rate: 2.8,
-      agreed_rate: 5000,
-      status: 'completed',
-      deliverables: ['1 review video', '2 shorts']
-    }
-  ],
-  '4': [
-    {
-      id: '4',
-      name: 'FitLife Coach',
-      platform: 'Instagram',
-      followers: 320000,
-      engagement_rate: 3.8,
-      agreed_rate: 1800,
-      status: 'accepted',
-      deliverables: ['5 workout posts', '10 stories']
-    }
-  ]
-};
-
 export const CampaignDetails: React.FC<CampaignDetailsProps> = ({ 
   campaign, 
   onBack, 
@@ -87,18 +28,15 @@ export const CampaignDetails: React.FC<CampaignDetailsProps> = ({
   onDelete,
   onWorkflowUpdate
 }) => {
-  const influencers = mockInfluencers[campaign.id] || [];
+  const { campaignCreators, loading, removeCreatorFromCampaign } = useCampaignCreators(campaign.id);
 
-  const getStatusColor = (status: Campaign['status'] | Influencer['status']) => {
+  const getStatusColor = (status: Campaign['status']) => {
     switch (status) {
       case 'active':
-      case 'accepted':
       case 'completed': return 'bg-green-100 text-green-800';
-      case 'paused':
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'paused': return 'bg-yellow-100 text-yellow-800';
       case 'draft': return 'bg-gray-100 text-gray-800';
-      case 'cancelled':
-      case 'declined': return 'bg-red-100 text-red-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -125,6 +63,10 @@ export const CampaignDetails: React.FC<CampaignDetailsProps> = ({
     if (onWorkflowUpdate) {
       onWorkflowUpdate(campaign.id, stepId);
     }
+  };
+
+  const handleRemoveCreator = async (campaignCreatorId: string) => {
+    await removeCreatorFromCampaign(campaignCreatorId);
   };
 
   return (
@@ -194,22 +136,15 @@ export const CampaignDetails: React.FC<CampaignDetailsProps> = ({
 
         {/* Enhanced Workflow Progress */}
         {campaign.workflow_step && (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="text-lg">Campaign Workflow Progress</CardTitle>
-              <CardDescription>
-                Track your campaign progress through each stage with interactive controls
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <EnhancedWorkflowGuide 
-                campaignId={campaign.id}
-                currentStep={campaign.workflow_step} 
-                onStepUpdate={handleWorkflowStepUpdate}
-                onEdit={onEdit} 
-              />
-            </CardContent>
-          </Card>
+          <div className="mb-8">
+            <EnhancedWorkflowGuide 
+              campaignId={campaign.id}
+              campaignName={campaign.name}
+              currentStep={campaign.workflow_step} 
+              onStepUpdate={handleWorkflowStepUpdate}
+              onEdit={onEdit} 
+            />
+          </div>
         )}
 
         {/* Campaign Overview */}
@@ -290,54 +225,48 @@ export const CampaignDetails: React.FC<CampaignDetailsProps> = ({
           </CardContent>
         </Card>
 
+        {/* Campaign Influencers */}
         <Card>
           <CardHeader>
-            <CardTitle>Campaign Influencers</CardTitle>
-            <CardDescription>
-              {influencers.length} influencer{influencers.length !== 1 ? 's' : ''} in this campaign
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Campaign Influencers</CardTitle>
+                <CardDescription>
+                  {campaignCreators.length} creator{campaignCreators.length !== 1 ? 's' : ''} in this campaign
+                </CardDescription>
+              </div>
+              <Link to={`/discovery?campaignId=${campaign.id}`}>
+                <Button className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Add Creators
+                </Button>
+              </Link>
+            </div>
           </CardHeader>
           <CardContent>
-            {influencers.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Influencer</TableHead>
-                    <TableHead>Platform</TableHead>
-                    <TableHead>Followers</TableHead>
-                    <TableHead>Engagement Rate</TableHead>
-                    <TableHead>Rate</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Deliverables</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {influencers.map((influencer) => (
-                    <TableRow key={influencer.id}>
-                      <TableCell className="font-medium">{influencer.name}</TableCell>
-                      <TableCell>{influencer.platform}</TableCell>
-                      <TableCell>{formatNumber(influencer.followers)}</TableCell>
-                      <TableCell>{influencer.engagement_rate}%</TableCell>
-                      <TableCell>{formatCurrency(influencer.agreed_rate)}</TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(influencer.status)}>
-                          {influencer.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-sm">
-                          {influencer.deliverables.map((deliverable, index) => (
-                            <div key={index}>{deliverable}</div>
-                          ))}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+            {loading ? (
+              <div className="text-center py-8 text-gray-500">
+                Loading creators...
+              </div>
+            ) : campaignCreators.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {campaignCreators.map((creator) => (
+                  <CampaignCreatorCard
+                    key={creator.id}
+                    creator={creator}
+                    onRemove={handleRemoveCreator}
+                  />
+                ))}
+              </div>
             ) : (
               <div className="text-center py-8 text-gray-500">
-                No influencers added to this campaign yet
+                <p className="mb-4">No creators added to this campaign yet</p>
+                <Link to={`/discovery?campaignId=${campaign.id}`}>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Your First Creator
+                  </Button>
+                </Link>
               </div>
             )}
           </CardContent>

@@ -1,26 +1,21 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { CheckCircle, Circle, ArrowRight, Plus, Search, MessageCircle, FileText, CreditCard, BarChart3, Phone, Mail, Download, Users } from 'lucide-react';
+import { CheckCircle, Circle, ArrowRight, Plus, Search, MessageCircle, FileText, CreditCard, BarChart3 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useCampaignCreators } from '@/hooks/useCampaignCreators';
-
-interface Creator {
-  id: string;
-  name: string;
-  status: string;
-  contact_method?: string;
-  agreed_rate?: number;
-  contract_signed: boolean;
-  payment_status: string;
-}
+import { OutreachStep } from './campaigns/workflow/OutreachStep';
+import { NegotiationStep } from './campaigns/workflow/NegotiationStep';
+import { ContractStep } from './campaigns/workflow/ContractStep';
+import { PaymentStep } from './campaigns/workflow/PaymentStep';
+import { ReportStep } from './campaigns/workflow/ReportStep';
 
 interface EnhancedWorkflowGuideProps {
   campaignId: string;
+  campaignName?: string;
   currentStep?: string;
   onStepUpdate?: (stepId: string) => void;
   onEdit?: () => void;
@@ -28,6 +23,7 @@ interface EnhancedWorkflowGuideProps {
 
 export const EnhancedWorkflowGuide: React.FC<EnhancedWorkflowGuideProps> = ({ 
   campaignId,
+  campaignName = "Campaign",
   currentStep = 'campaign-creation',
   onStepUpdate,
   onEdit
@@ -117,164 +113,76 @@ export const EnhancedWorkflowGuide: React.FC<EnhancedWorkflowGuideProps> = ({
     return 'border-gray-200 bg-gray-50';
   };
 
-  const handleOutreach = async (creatorId: string, method: 'email' | 'call') => {
-    await updateCampaignCreator(creatorId, {
-      contact_method: method,
-      contacted_at: new Date().toISOString(),
-      status: 'contacted'
-    });
-  };
-
-  const handleNegotiationUpdate = async (creatorId: string, status: string, rate?: number) => {
-    await updateCampaignCreator(creatorId, {
-      status: status as any,
-      agreed_rate: rate,
-      negotiation_notes: `Status updated to ${status}${rate ? ` with rate $${rate}` : ''}`
-    });
-  };
-
-  const handleContractUpdate = async (creatorId: string, signed: boolean) => {
-    await updateCampaignCreator(creatorId, {
-      contract_signed: signed,
-      status: signed ? 'contracted' : 'negotiating'
-    });
-  };
-
-  const handlePaymentUpdate = async (creatorId: string, status: string) => {
-    await updateCampaignCreator(creatorId, {
-      payment_status: status as any
-    });
-  };
-
-  const handleDownloadReport = (creatorId: string) => {
-    // Mock report download
-    const creator = campaignCreators.find(c => c.id === creatorId);
-    console.log(`Downloading report for ${creator?.creator_id}`);
-  };
-
-  const renderStepActions = (step: any) => {
+  const renderStepContent = (step: any) => {
     switch (step.id) {
       case 'creator-search':
         return (
-          <div className="mt-4 space-y-2">
+          <div className="mt-4">
             <Link to={`/discovery?campaignId=${campaignId}`}>
               <Button size="sm" className="w-full">
-                <Users className="h-4 w-4 mr-2" />
-                Add More Creators
+                Add More Creators ({campaignCreators.length} added)
               </Button>
             </Link>
           </div>
         );
 
       case 'outreach':
-        return (
-          <div className="mt-4 space-y-2">
-            <h4 className="font-medium text-sm">Contact Creators:</h4>
-            {campaignCreators.map((creator) => (
-              <div key={creator.id} className="flex items-center justify-between p-2 bg-white rounded border">
-                <span className="text-sm">{creator.creator_id}</span>
-                <div className="flex gap-1">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleOutreach(creator.id, 'email')}
-                  >
-                    <Mail className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleOutreach(creator.id, 'call')}
-                  >
-                    <Phone className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            ))}
+        return campaignCreators.length > 0 ? (
+          <OutreachStep 
+            campaignCreators={campaignCreators} 
+            onUpdateCreator={updateCampaignCreator} 
+          />
+        ) : (
+          <div className="mt-4 text-center text-gray-500">
+            No creators added yet. Add creators first.
           </div>
         );
 
       case 'deal-negotiation':
-        return (
-          <div className="mt-4 space-y-2">
-            <h4 className="font-medium text-sm">Negotiation Status:</h4>
-            {campaignCreators.map((creator) => (
-              <div key={creator.id} className="flex items-center justify-between p-2 bg-white rounded border">
-                <span className="text-sm">{creator.creator_id}</span>
-                <Select onValueChange={(value) => handleNegotiationUpdate(creator.id, value)}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder={creator.status} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="negotiating">Ongoing</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="contracted">Negotiated</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            ))}
+        return campaignCreators.length > 0 ? (
+          <NegotiationStep 
+            campaignCreators={campaignCreators} 
+            onUpdateCreator={updateCampaignCreator} 
+          />
+        ) : (
+          <div className="mt-4 text-center text-gray-500">
+            No creators to negotiate with yet.
           </div>
         );
 
       case 'contract':
-        return (
-          <div className="mt-4 space-y-2">
-            <h4 className="font-medium text-sm">Contract Status:</h4>
-            {campaignCreators.map((creator) => (
-              <div key={creator.id} className="flex items-center justify-between p-2 bg-white rounded border">
-                <span className="text-sm">{creator.creator_id}</span>
-                <Select onValueChange={(value) => handleContractUpdate(creator.id, value === 'signed')}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder={creator.contract_signed ? 'Signed' : 'Unsigned'} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="unsigned">Unsigned</SelectItem>
-                    <SelectItem value="signed">Signed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            ))}
+        return campaignCreators.filter(c => c.agreed_rate).length > 0 ? (
+          <ContractStep 
+            campaignCreators={campaignCreators} 
+            onUpdateCreator={updateCampaignCreator} 
+          />
+        ) : (
+          <div className="mt-4 text-center text-gray-500">
+            Complete negotiations first to generate contracts.
           </div>
         );
 
       case 'payment':
-        return (
-          <div className="mt-4 space-y-2">
-            <h4 className="font-medium text-sm">Payment Status:</h4>
-            {campaignCreators.map((creator) => (
-              <div key={creator.id} className="flex items-center justify-between p-2 bg-white rounded border">
-                <span className="text-sm">{creator.creator_id}</span>
-                <Select onValueChange={(value) => handlePaymentUpdate(creator.id, value)}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue placeholder={creator.payment_status} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="overdue">Overdue</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            ))}
+        return campaignCreators.filter(c => c.contract_signed).length > 0 ? (
+          <PaymentStep 
+            campaignCreators={campaignCreators} 
+            onUpdateCreator={updateCampaignCreator} 
+          />
+        ) : (
+          <div className="mt-4 text-center text-gray-500">
+            Signed contracts required before processing payments.
           </div>
         );
 
       case 'report':
-        return (
-          <div className="mt-4 space-y-2">
-            <h4 className="font-medium text-sm">Download Reports:</h4>
-            {campaignCreators.map((creator) => (
-              <div key={creator.id} className="flex items-center justify-between p-2 bg-white rounded border">
-                <span className="text-sm">{creator.creator_id}</span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleDownloadReport(creator.id)}
-                >
-                  <Download className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
+        return campaignCreators.length > 0 ? (
+          <ReportStep 
+            campaignCreators={campaignCreators} 
+            campaignName={campaignName}
+          />
+        ) : (
+          <div className="mt-4 text-center text-gray-500">
+            No campaign data to report yet.
           </div>
         );
 
@@ -347,62 +255,7 @@ export const EnhancedWorkflowGuide: React.FC<EnhancedWorkflowGuideProps> = ({
               
               {expandedStep === step.id && (
                 <div className="mt-4 pt-4 border-t border-gray-200">
-                  {renderStepActions(step)}
-                  
-                  <div className="mt-4 text-sm text-gray-600">
-                    <h4 className="font-medium mb-2">What to do in this step:</h4>
-                    <ul className="space-y-1 list-disc list-inside">
-                      {step.id === 'campaign-creation' && (
-                        <>
-                          <li>Set campaign objectives and KPIs</li>
-                          <li>Define target audience and demographics</li>
-                          <li>Allocate budget and timeline</li>
-                        </>
-                      )}
-                      {step.id === 'creator-search' && (
-                        <>
-                          <li>Use filters to find relevant creators</li>
-                          <li>Review creator profiles and engagement rates</li>
-                          <li>Save potential creators to your shortlist</li>
-                        </>
-                      )}
-                      {step.id === 'outreach' && (
-                        <>
-                          <li>Send personalized outreach messages</li>
-                          <li>Schedule calls with interested creators</li>
-                          <li>Present campaign brief and requirements</li>
-                        </>
-                      )}
-                      {step.id === 'deal-negotiation' && (
-                        <>
-                          <li>Discuss deliverables and content requirements</li>
-                          <li>Negotiate pricing and payment terms</li>
-                          <li>Agree on posting schedule and deadlines</li>
-                        </>
-                      )}
-                      {step.id === 'contract' && (
-                        <>
-                          <li>Generate contracts with agreed terms</li>
-                          <li>Send contracts for creator review and signature</li>
-                          <li>Store signed contracts securely</li>
-                        </>
-                      )}
-                      {step.id === 'payment' && (
-                        <>
-                          <li>Create invoices for completed deliverables</li>
-                          <li>Process payments according to agreed terms</li>
-                          <li>Track payment status and confirmations</li>
-                        </>
-                      )}
-                      {step.id === 'report' && (
-                        <>
-                          <li>Analyze campaign performance metrics</li>
-                          <li>Generate comprehensive reports</li>
-                          <li>Identify insights for future campaigns</li>
-                        </>
-                      )}
-                    </ul>
-                  </div>
+                  {renderStepContent(step)}
                 </div>
               )}
             </div>
