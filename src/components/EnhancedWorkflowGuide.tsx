@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -52,7 +51,7 @@ export const EnhancedWorkflowGuide: React.FC<EnhancedWorkflowGuideProps> = ({
       description: 'Find and filter creators that match your campaign requirements',
       icon: <Search className="h-5 w-5" />,
       status: currentStep === 'creator-search' ? 'current' : currentStep === 'campaign-creation' ? 'pending' : 'completed',
-      route: '/discovery',
+      route: `/discovery?campaignId=${campaignId}`,
       action: 'Find Creators'
     },
     {
@@ -158,7 +157,7 @@ export const EnhancedWorkflowGuide: React.FC<EnhancedWorkflowGuideProps> = ({
       case 'creator-search':
         return (
           <div className="mt-4 space-y-2">
-            <Link to="/discovery">
+            <Link to={`/discovery?campaignId=${campaignId}`}>
               <Button size="sm" className="w-full">
                 <Users className="h-4 w-4 mr-2" />
                 Add More Creators

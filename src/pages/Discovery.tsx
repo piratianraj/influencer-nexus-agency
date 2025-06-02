@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Plus, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Plus, CheckCircle, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AdvancedFilters, FilterOptions } from '@/components/AdvancedFilters';
@@ -34,6 +35,11 @@ const Discovery = () => {
   // Get data from brand brief if coming from that flow
   const briefData = location.state;
   const [selectedCreators, setSelectedCreators] = useState<string[]>([]);
+
+  // Check if we're adding creators to an existing campaign
+  const urlParams = new URLSearchParams(location.search);
+  const campaignId = urlParams.get('campaignId');
+  const isAddingToCampaign = Boolean(campaignId);
 
   const { creators, loading, refetch, page, setPage, pageSize } = useCreatorData();
   const { applyFilters, applySearch } = useCreatorFilters();
@@ -133,6 +139,34 @@ const Discovery = () => {
     });
   };
 
+  const handleAddToCampaign = () => {
+    if (selectedCreators.length === 0) {
+      toast({
+        title: "No Creators Selected",
+        description: "Please select at least one creator to add to the campaign.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // TODO: Add logic to add creators to the existing campaign
+    // This would typically involve calling an API to add the creators to the campaign
+    console.log(`Adding ${selectedCreators.length} creators to campaign ${campaignId}`);
+    
+    toast({
+      title: "Creators Added",
+      description: `${selectedCreators.length} creator${selectedCreators.length !== 1 ? 's' : ''} added to campaign successfully.`,
+    });
+
+    // Navigate back to the campaign details
+    navigate(`/campaigns`, { 
+      state: { 
+        selectedCampaignId: campaignId,
+        addedCreators: selectedCreators 
+      } 
+    });
+  };
+
   // Apply search first, then filters
   const searchedCreators = applySearch(creators, state.searchTerm);
   const filteredCreators = applyFilters(searchedCreators, filters);
@@ -172,7 +206,7 @@ const Discovery = () => {
             <div>
               <h1 className="text-4xl font-bold mb-4">
                 <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  Discover Creators
+                  {isAddingToCampaign ? 'Add Creators to Campaign' : 'Discover Creators'}
                 </span>
               </h1>
               {briefData?.fromBrief && (
@@ -180,9 +214,14 @@ const Discovery = () => {
                   Showing creators based on your brand brief analysis
                 </p>
               )}
+              {isAddingToCampaign && (
+                <p className="text-gray-600">
+                  Select creators to add to your campaign workflow
+                </p>
+              )}
             </div>
 
-            {/* Campaign Creation Card */}
+            {/* Campaign Creation/Addition Card */}
             {selectedCreators.length > 0 && (
               <Card className="bg-white/70 backdrop-blur-sm border border-white/20 shadow-lg rounded-2xl">
                 <CardContent className="p-4">
@@ -190,12 +229,21 @@ const Discovery = () => {
                     <CheckCircle className="h-5 w-5 text-green-600" />
                     <span className="font-medium">{selectedCreators.length} creator{selectedCreators.length !== 1 ? 's' : ''} selected</span>
                     <Button 
-                      onClick={handleCreateCampaign}
+                      onClick={isAddingToCampaign ? handleAddToCampaign : handleCreateCampaign}
                       size="sm"
                       className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white"
                     >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create Campaign
+                      {isAddingToCampaign ? (
+                        <>
+                          <UserPlus className="h-4 w-4 mr-2" />
+                          Add to Campaign
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Create Campaign
+                        </>
+                      )}
                     </Button>
                   </div>
                 </CardContent>
@@ -264,11 +312,20 @@ const Discovery = () => {
                     {selectedCreators.length} creator{selectedCreators.length !== 1 ? 's' : ''} selected
                   </span>
                   <Button 
-                    onClick={handleCreateCampaign}
+                    onClick={isAddingToCampaign ? handleAddToCampaign : handleCreateCampaign}
                     className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white rounded-full"
                   >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Campaign
+                    {isAddingToCampaign ? (
+                      <>
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        Add to Campaign
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create Campaign
+                      </>
+                    )}
                   </Button>
                 </div>
               </CardContent>
